@@ -3,8 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SBJCESL - Notebook System</title>
+    <title>SBJCESL - Notebook Management System</title>
+    
+    <!-- External CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     
     <style>
         :root { --primary: #003366; --gold: #ffc107; --bg: #f8f9fa; }
@@ -14,17 +17,20 @@
         .btn-primary { background-color: var(--primary); border: none; }
         .hidden { display: none !important; }
         
-        /* FIXED: Only target text and tel inputs, NOT password inputs */
+        /* Auto Capitalization for non-password fields */
         input[type="text"], input[type="tel"], select { text-transform: uppercase; }
-        input[type="password"] { text-transform: none !important; } /* DO NOT CAPITALIZE PASSWORD */
+        
+        /* NO Capitalization for Password fields */
+        input[type="password"], .pass-field { text-transform: none !important; }
         
         .student-entry { background: #fff; border: 1px solid #ddd; padding: 15px; border-radius: 8px; margin-bottom: 10px; }
         #reader { width: 100%; max-width: 400px; margin: auto; border: 2px solid var(--primary); border-radius: 10px; overflow: hidden; }
         #loader { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.9); z-index:10000; display:none; flex-direction:column; align-items:center; justify-content:center; }
         .nav-link-custom { cursor: pointer; padding: 8px 15px; border-radius: 5px; font-weight: bold; }
+        .input-group-text { cursor: pointer; background: white; }
     </style>
 </head>
-<body>
+<body onload="checkRememberMe()">
 
 <div id="loader">
     <div class="spinner-border text-primary"></div>
@@ -48,7 +54,7 @@
 
 <div class="container pb-5">
 
-    <!-- MEMBER LOGIN -->
+    <!-- 1. MEMBER LOGIN -->
     <div id="member-login-sec" class="row justify-content-center section">
         <div class="col-md-5">
             <div class="card p-4">
@@ -62,7 +68,53 @@
         </div>
     </div>
 
-    <!-- REGISTRATION FORM -->
+    <!-- 2. COMMITTEE LOGIN -->
+    <div id="comm-login-sec" class="row justify-content-center section hidden">
+        <div class="col-md-4">
+            <div class="card p-4">
+                <h4 class="text-center">Committee Login</h4>
+                <label>Mobile Number</label>
+                <input type="tel" id="commMob" class="form-control mb-2" placeholder="Mobile Number">
+                
+                <label>Password</label>
+                <div class="input-group mb-2">
+                    <input type="password" id="commPass" class="form-control pass-field" placeholder="Password">
+                    <span class="input-group-text" onclick="togglePassword('commPass')"><i class="bi bi-eye"></i></span>
+                </div>
+
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="commRemember">
+                    <label class="form-check-label" for="commRemember">Remember Me</label>
+                </div>
+                <button class="btn btn-dark w-100" onclick="doCommitteeLogin()">Login to Dashboard</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. ADMIN LOGIN -->
+    <div id="admin-login-sec" class="row justify-content-center section hidden">
+        <div class="col-md-4">
+            <div class="card p-4">
+                <h4 class="text-center">Admin Login</h4>
+                <label>Admin ID</label>
+                <input type="text" id="admID" class="form-control mb-2" placeholder="Admin ID">
+                
+                <label>Password</label>
+                <div class="input-group mb-2">
+                    <input type="password" id="admPass" class="form-control pass-field" placeholder="Password">
+                    <span class="input-group-text" onclick="togglePassword('admPass')"><i class="bi bi-eye"></i></span>
+                </div>
+
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="admRemember">
+                    <label class="form-check-label" for="admRemember">Remember Me</label>
+                </div>
+                <button class="btn btn-danger w-100" onclick="doAdminLogin()">Login</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. REGISTRATION FORM (Members) -->
     <div id="reg-form-sec" class="row justify-content-center section hidden">
         <div class="col-md-10">
             <div class="card p-4">
@@ -85,19 +137,7 @@
         </div>
     </div>
 
-    <!-- COMMITTEE LOGIN -->
-    <div id="comm-login-sec" class="row justify-content-center section hidden">
-        <div class="col-md-4">
-            <div class="card p-4">
-                <h4 class="text-center">Committee Login</h4>
-                <input type="tel" id="commMob" class="form-control mb-2" placeholder="Mobile Number">
-                <input type="password" id="commPass" class="form-control mb-3" placeholder="Password (Bat@3232)">
-                <button class="btn btn-dark w-100" onclick="doCommitteeLogin()">Login to Dashboard</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- COMMITTEE DASHBOARD -->
+    <!-- 5. COMMITTEE DASHBOARD -->
     <div id="comm-dash-sec" class="row section hidden">
         <div class="col-md-10 mx-auto">
             <div class="card p-4">
@@ -111,7 +151,7 @@
                         <h6>Scan QR Code</h6>
                         <div id="reader"></div>
                         <div class="mt-3">
-                            <label>Or Enter Token ID Manually:</label>
+                            <label>Token Manually:</label>
                             <div class="input-group">
                                 <input type="text" id="manualToken" class="form-control" placeholder="Ex: BT1234">
                                 <button class="btn btn-primary" onclick="searchByToken()">Search</button>
@@ -126,31 +166,17 @@
                     </div>
                 </div>
                 <div class="mt-4">
-                    <div class="table-responsive">
-                        <table class="table table-bordered table-sm">
-                            <thead class="table-dark"><tr><th>Token</th><th>Member</th><th>Students</th><th>Amount</th><th>Status</th></tr></thead>
-                            <tbody id="commTable"></tbody>
-                        </table>
-                    </div>
+                    <table class="table table-bordered table-sm">
+                        <thead class="table-dark"><tr><th>Token</th><th>Member</th><th>Students</th><th>Amount</th><th>Status</th></tr></thead>
+                        <tbody id="commTable"></tbody>
+                    </table>
                     <button class="btn btn-success btn-sm mt-2" onclick="downloadCommExcel()">Export Committee Excel</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- ADMIN LOGIN -->
-    <div id="admin-login-sec" class="row justify-content-center section hidden">
-        <div class="col-md-4">
-            <div class="card p-4">
-                <h4 class="text-center">Admin Login</h4>
-                <input type="text" id="admID" class="form-control mb-2" placeholder="Admin ID">
-                <input type="password" id="admPass" class="form-control mb-3" placeholder="Password">
-                <button class="btn btn-danger w-100" onclick="doAdminLogin()">Login</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ADMIN DASHBOARD -->
+    <!-- 6. ADMIN DASHBOARD -->
     <div id="admin-dash-sec" class="row section hidden">
         <div class="col-md-12">
             <div class="card p-4">
@@ -187,7 +213,7 @@
         </div>
     </div>
 
-    <!-- SUCCESS SCREEN -->
+    <!-- 7. SUCCESS SCREEN -->
     <div id="success-sec" class="row justify-content-center section hidden mt-4">
         <div class="col-md-6 text-center">
             <div class="card p-5 border-success">
@@ -195,8 +221,7 @@
                 <div id="qrcode" class="d-flex justify-content-center my-4"></div>
                 <h3 id="resToken" class="fw-bold"></h3>
                 <h4 class="text-primary" id="resAmt"></h4>
-                <hr>
-                <button class="btn btn-primary mt-3" onclick="location.reload()">Back</button>
+                <button class="btn btn-primary mt-3" onclick="location.reload()">Finish</button>
             </div>
         </div>
     </div>
@@ -226,26 +251,79 @@ const db = firebase.firestore();
 const storage = firebase.storage();
 let committeeName = "";
 
+// --- PASSWORD UI UTILS ---
+function togglePassword(inputId) {
+    const input = document.getElementById(inputId);
+    const icon = input.nextElementSibling.querySelector('i');
+    if (input.type === "password") {
+        input.type = "text";
+        icon.classList.replace('bi-eye', 'bi-eye-slash');
+    } else {
+        input.type = "password";
+        icon.classList.replace('bi-eye-slash', 'bi-eye');
+    }
+}
+
+// --- REMEMBER ME LOGIC ---
+function checkRememberMe() {
+    if (localStorage.getItem('admID')) {
+        document.getElementById('admID').value = localStorage.getItem('admID');
+        document.getElementById('admPass').value = localStorage.getItem('admPass');
+        document.getElementById('admRemember').checked = true;
+    }
+    if (localStorage.getItem('commMob')) {
+        document.getElementById('commMob').value = localStorage.getItem('commMob');
+        document.getElementById('commPass').value = localStorage.getItem('commPass');
+        document.getElementById('commRemember').checked = true;
+    }
+}
+
 // --- NAVIGATION ---
 function showSection(id) {
     document.querySelectorAll('.section').forEach(s => s.classList.add('hidden'));
     document.getElementById(id).classList.remove('hidden');
 }
 
-// --- ADMIN LOGIC ---
+// --- LOGIN LOGIC ---
 function doAdminLogin() {
-    // FIXED: Using raw values, not uppercase
-    const aid = document.getElementById('admID').value;
-    const apass = document.getElementById('admPass').value;
+    const id = document.getElementById('admID').value;
+    const pass = document.getElementById('admPass').value; // Case sensitive
     
-    if(aid === "BATRISI" && apass === "Bat@3232") {
+    if(id === "BATRISI" && pass === "Bat@3232") {
+        if(document.getElementById('admRemember').checked) {
+            localStorage.setItem('admID', id);
+            localStorage.setItem('admPass', pass);
+        } else {
+            localStorage.removeItem('admID');
+            localStorage.removeItem('admPass');
+        }
         showSection('admin-dash-sec');
-    } else { alert("Error: Wrong Admin ID/Password"); }
+    } else { alert("Error: Wrong Credentials"); }
 }
 
+function doCommitteeLogin() {
+    const mob = document.getElementById('commMob').value;
+    const pass = document.getElementById('commPass').value;
+    
+    if(pass === "Bat@3232" && mob.length >= 10) {
+        if(document.getElementById('commRemember').checked) {
+            localStorage.setItem('commMob', mob);
+            localStorage.setItem('commPass', pass);
+        } else {
+            localStorage.removeItem('commMob');
+            localStorage.removeItem('commPass');
+        }
+        committeeName = mob;
+        showSection('comm-dash-sec');
+        startScanner();
+        loadCommTable();
+    } else { alert("Invalid Credentials"); }
+}
+
+// --- ADMIN / CSV LOGIC ---
 async function uploadMasterData() {
     const file = document.getElementById('masterCSV').files[0];
-    if(!file) return alert("Please select CSV");
+    if(!file) return alert("Select CSV");
     const reader = new FileReader();
     reader.onload = async function(e) {
         setLoader(true, "Uploading...");
@@ -259,8 +337,7 @@ async function uploadMasterData() {
                 batch.set(docRef, { 
                     MemberNo: d[0].trim(), 
                     Name: d[1].trim().toUpperCase(), 
-                    Mobile: d[3].trim(), 
-                    Address: (d[4]||'').trim().toUpperCase() 
+                    Mobile: d[3].trim()
                 });
                 count++;
                 if(count === 400) { await batch.commit(); batch = db.batch(); count = 0; }
@@ -268,19 +345,18 @@ async function uploadMasterData() {
         }
         await batch.commit();
         setLoader(false);
-        alert("Master Data Uploaded!");
+        alert("Success!");
     };
     reader.readAsText(file);
 }
 
-// --- MOBILE UPDATE ---
 async function searchMemberToUpdate() {
     const mno = document.getElementById('searchMNo').value;
     const doc = await db.collection("members").doc(mno).get();
     if(doc.exists) {
         document.getElementById('update-box').classList.remove('hidden');
         document.getElementById('newMobInput').value = doc.data().Mobile;
-    } else { alert("Member Number Not Found"); }
+    } else { alert("Not Found"); }
 }
 
 async function updateMobileFinal() {
@@ -290,7 +366,7 @@ async function updateMobileFinal() {
     alert("Mobile Updated!");
 }
 
-// --- MEMBER REGISTRATION ---
+// --- MEMBER PROCESS ---
 async function doMemberLogin() {
     const mob = document.getElementById('memMobile').value;
     if(mob.length < 10) return alert("Enter 10 digit mobile");
@@ -307,7 +383,7 @@ async function doMemberLogin() {
     const mem = await db.collection("members").where("Mobile", "==", mob).get();
     if(mem.empty) {
         setLoader(false);
-        alert("Number not registered. Contact office: 9586423232");
+        alert("Not registered. Contact office: 9586423232");
         return;
     }
 
@@ -325,7 +401,7 @@ function createStudentForm() {
     list.innerHTML = "";
     for(let i=1; i<=c; i++) {
         list.innerHTML += `
-        <div class="student-entry">
+        <div class="student-entry shadow-sm">
             <h6>STUDENT ${i}</h6>
             <div class="row g-2">
                 <div class="col-md-4"><input type="text" placeholder="NAME" class="form-control s-name"></div>
@@ -347,12 +423,11 @@ async function finalSubmit() {
         for(let box of boxes) {
             const file = box.querySelector('.s-file').files[0];
             const name = box.querySelector('.s-name').value;
-            if(!file || !name) throw new Error("Complete all fields!");
+            if(!file || !name) throw new Error("Please upload all files!");
             const ref = storage.ref(`docs/${Date.now()}_${file.name}`);
             await ref.put(file);
             students.push({ 
                 Name: name.toUpperCase(), 
-                Std: box.querySelector('.s-std').value.toUpperCase(), 
                 File: await ref.getDownloadURL() 
             });
         }
@@ -368,20 +443,7 @@ async function finalSubmit() {
     setLoader(false);
 }
 
-// --- COMMITTEE LOGIC ---
-function doCommitteeLogin() {
-    const mob = document.getElementById('commMob').value;
-    // FIXED: Password logic
-    const pass = document.getElementById('commPass').value; 
-    
-    if(pass === "Bat@3232" && mob.length >= 10) {
-        committeeName = mob;
-        showSection('comm-dash-sec');
-        startScanner();
-        loadCommTable();
-    } else { alert("Invalid Credentials"); }
-}
-
+// --- COMMITTEE / SCANNER ---
 function startScanner() {
     const sc = new Html5Qrcode("reader");
     sc.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (t) => searchByToken(t));
@@ -392,7 +454,7 @@ async function searchByToken(tokenText = null) {
     if(!t) return;
     const res = await db.collection("registrations").where("Token", "==", t).get();
     const div = document.getElementById('verify-res');
-    if(res.empty) { div.innerHTML = "NOT FOUND"; return; }
+    if(res.empty) { div.innerHTML = "TOKEN NOT FOUND"; return; }
     
     const doc = res.docs[0];
     const d = doc.data();
@@ -402,14 +464,13 @@ async function searchByToken(tokenText = null) {
             <p>Students: ${d.Students.length}</p>
             <h3 class="text-success">COLLECT: ₹ ${d.Amount}</h3>
             <hr>
-            ${d.Status === "DELIVERED" ? "ALREADY DONE" : `<button class="btn btn-primary w-100" onclick="markDelivered('${doc.id}')">MARK DELIVERED</button>`}
+            ${d.Status === "DELIVERED" ? "ALREADY DELIVERED" : `<button class="btn btn-primary w-100" onclick="markDelivered('${doc.id}')">MARK AS DELIVERED</button>`}
         </div>`;
 }
 
 async function markDelivered(id) {
     await db.collection("registrations").doc(id).update({ Status: "DELIVERED", VerifiedBy: committeeName });
-    alert("Updated!");
-    searchByToken(); loadCommTable();
+    alert("Updated!"); searchByToken(); loadCommTable();
 }
 
 async function loadCommTable() {
@@ -422,7 +483,7 @@ async function loadCommTable() {
     });
 }
 
-// --- UTILS ---
+// --- HELPERS ---
 function showSuccess(token, amt) {
     showSection('success-sec');
     document.getElementById('resToken').innerText = "TOKEN: " + token;
@@ -437,7 +498,7 @@ function setLoader(v, msg) {
 }
 
 function downloadCommExcel() {
-    XLSX.writeFile(XLSX.utils.table_to_book(document.getElementById("commTable")), "Committee_Report.xlsx");
+    XLSX.writeFile(XLSX.utils.table_to_book(document.getElementById("commTable")), "Daily_Report.xlsx");
 }
 
 async function downloadRegistrations() {
@@ -447,7 +508,7 @@ async function downloadRegistrations() {
         const d = doc.data();
         rows.push({ Token: d.Token, Name: d.MemberName, Mobile: d.Mobile, Amt: d.Amount, Status: d.Status }); 
     });
-    XLSX.writeFile(XLSX.utils.book_append_sheet(XLSX.utils.book_new(), XLSX.utils.json_to_sheet(rows), "Data"), "SBJCESL_Report.xlsx");
+    XLSX.writeFile(XLSX.utils.book_append_sheet(XLSX.utils.book_new(), XLSX.utils.json_to_sheet(rows), "Data"), "SBJCESL_Full_Report.xlsx");
 }
 </script>
 </body>
