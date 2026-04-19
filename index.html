@@ -3,9 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SBJCESL - Notebook Management System</title>
-    
-    <!-- External CSS -->
+    <title>SBJCESL - Notebook System</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     
     <style>
@@ -15,12 +13,15 @@
         .card { border-radius: 12px; border: none; box-shadow: 0 5px 15px rgba(0,0,0,0.1); margin-top: 20px; }
         .btn-primary { background-color: var(--primary); border: none; }
         .hidden { display: none !important; }
-        input, select { text-transform: uppercase; }
+        
+        /* FIXED: Only target text and tel inputs, NOT password inputs */
+        input[type="text"], input[type="tel"], select { text-transform: uppercase; }
+        input[type="password"] { text-transform: none !important; } /* DO NOT CAPITALIZE PASSWORD */
+        
         .student-entry { background: #fff; border: 1px solid #ddd; padding: 15px; border-radius: 8px; margin-bottom: 10px; }
         #reader { width: 100%; max-width: 400px; margin: auto; border: 2px solid var(--primary); border-radius: 10px; overflow: hidden; }
         #loader { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.9); z-index:10000; display:none; flex-direction:column; align-items:center; justify-content:center; }
-        .nav-link-custom { cursor: pointer; padding: 8px 15px; border-radius: 5px; transition: 0.3s; }
-        .nav-link-custom:hover { background: #e9ecef; }
+        .nav-link-custom { cursor: pointer; padding: 8px 15px; border-radius: 5px; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -39,9 +40,9 @@
 <!-- Navigation -->
 <div class="container mt-2">
     <div class="d-flex justify-content-center bg-white p-2 rounded shadow-sm">
-        <div class="nav-link-custom mx-2 fw-bold text-primary" onclick="showSection('member-login-sec')">Member Login</div>
-        <div class="nav-link-custom mx-2 fw-bold text-dark" onclick="showSection('comm-login-sec')">Committee Panel</div>
-        <div class="nav-link-custom mx-2 fw-bold text-danger" onclick="showSection('admin-login-sec')">Admin</div>
+        <div class="nav-link-custom mx-2 text-primary" onclick="showSection('member-login-sec')">Member Login</div>
+        <div class="nav-link-custom mx-2 text-dark" onclick="showSection('comm-login-sec')">Committee Panel</div>
+        <div class="nav-link-custom mx-2 text-danger" onclick="showSection('admin-login-sec')">Admin</div>
     </div>
 </div>
 
@@ -118,23 +119,20 @@
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <h6>Member / Student Details</h6>
+                        <h6>Details</h6>
                         <div id="verify-res" class="p-3 border rounded bg-light" style="min-height: 200px;">
-                            <p class="text-muted text-center mt-5">Scan a QR Code to see details</p>
+                            <p class="text-muted text-center mt-5">Scan QR Code to see details</p>
                         </div>
                     </div>
                 </div>
                 <div class="mt-4">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h6>Today's Collected Fees & Records</h6>
-                        <button class="btn btn-sm btn-success" onclick="downloadCommExcel()">Export to Excel</button>
-                    </div>
-                    <div class="table-responsive mt-2">
+                    <div class="table-responsive">
                         <table class="table table-bordered table-sm">
                             <thead class="table-dark"><tr><th>Token</th><th>Member</th><th>Students</th><th>Amount</th><th>Status</th></tr></thead>
                             <tbody id="commTable"></tbody>
                         </table>
                     </div>
+                    <button class="btn btn-success btn-sm mt-2" onclick="downloadCommExcel()">Export Committee Excel</button>
                 </div>
             </div>
         </div>
@@ -156,8 +154,11 @@
     <div id="admin-dash-sec" class="row section hidden">
         <div class="col-md-12">
             <div class="card p-4">
-                <h4>Admin Control Panel</h4>
-                <div class="row g-4 mt-2">
+                <div class="d-flex justify-content-between mb-3">
+                    <h4>Admin Panel</h4>
+                    <button class="btn btn-sm btn-outline-danger" onclick="location.reload()">Logout</button>
+                </div>
+                <div class="row g-4">
                     <div class="col-md-6">
                         <div class="p-3 border rounded bg-light">
                             <h6>1. Upload Master CSV</h6>
@@ -179,7 +180,7 @@
                         </div>
                     </div>
                     <div class="col-12 text-center">
-                        <button class="btn btn-outline-success" onclick="downloadRegistrations()">Download Master Report (Excel)</button>
+                        <button class="btn btn-success" onclick="downloadRegistrations()">Download Master Excel Report</button>
                     </div>
                 </div>
             </div>
@@ -192,10 +193,10 @@
             <div class="card p-5 border-success">
                 <h2 class="text-success fw-bold">Success!</h2>
                 <div id="qrcode" class="d-flex justify-content-center my-4"></div>
-                <h3 id="resToken" class="fw-bold text-dark"></h3>
+                <h3 id="resToken" class="fw-bold"></h3>
                 <h4 class="text-primary" id="resAmt"></h4>
-                <p class="mt-3">Aapka registration ho gaya he. Please take a Screenshot.</p>
-                <button class="btn btn-primary mt-3" onclick="location.reload()">Done</button>
+                <hr>
+                <button class="btn btn-primary mt-3" onclick="location.reload()">Back</button>
             </div>
         </div>
     </div>
@@ -231,19 +232,23 @@ function showSection(id) {
     document.getElementById(id).classList.remove('hidden');
 }
 
-// --- ADMIN & MASTER LOGIC ---
+// --- ADMIN LOGIC ---
 function doAdminLogin() {
-    if(document.getElementById('admID').value === "BATRISI" && document.getElementById('admPass').value === "Bat@3232") {
+    // FIXED: Using raw values, not uppercase
+    const aid = document.getElementById('admID').value;
+    const apass = document.getElementById('admPass').value;
+    
+    if(aid === "BATRISI" && apass === "Bat@3232") {
         showSection('admin-dash-sec');
     } else { alert("Error: Wrong Admin ID/Password"); }
 }
 
 async function uploadMasterData() {
     const file = document.getElementById('masterCSV').files[0];
-    if(!file) return alert("Please select CSV file");
+    if(!file) return alert("Please select CSV");
     const reader = new FileReader();
     reader.onload = async function(e) {
-        setLoader(true, "Uploading Master Records...");
+        setLoader(true, "Uploading...");
         const lines = e.target.result.split('\n').slice(1);
         let batch = db.batch();
         let count = 0;
@@ -251,18 +256,24 @@ async function uploadMasterData() {
             const d = line.split(',');
             if(d.length >= 4) {
                 const docRef = db.collection("members").doc(d[0].trim());
-                batch.set(docRef, { MemberNo: d[0].trim(), Name: d[1].trim().toUpperCase(), Mobile: d[3].trim(), Address: (d[4]||'').trim().toUpperCase() });
+                batch.set(docRef, { 
+                    MemberNo: d[0].trim(), 
+                    Name: d[1].trim().toUpperCase(), 
+                    Mobile: d[3].trim(), 
+                    Address: (d[4]||'').trim().toUpperCase() 
+                });
                 count++;
                 if(count === 400) { await batch.commit(); batch = db.batch(); count = 0; }
             }
         }
         await batch.commit();
         setLoader(false);
-        alert("Master CSV Uploaded!");
+        alert("Master Data Uploaded!");
     };
     reader.readAsText(file);
 }
 
+// --- MOBILE UPDATE ---
 async function searchMemberToUpdate() {
     const mno = document.getElementById('searchMNo').value;
     const doc = await db.collection("members").doc(mno).get();
@@ -276,13 +287,13 @@ async function updateMobileFinal() {
     const mno = document.getElementById('searchMNo').value;
     const newMob = document.getElementById('newMobInput').value;
     await db.collection("members").doc(mno).update({ Mobile: newMob });
-    alert("Mobile Updated Successfully!");
+    alert("Mobile Updated!");
 }
 
-// --- MEMBER REGISTRATION LOGIC ---
+// --- MEMBER REGISTRATION ---
 async function doMemberLogin() {
     const mob = document.getElementById('memMobile').value;
-    if(mob.length < 10) return alert("Enter valid mobile number");
+    if(mob.length < 10) return alert("Enter 10 digit mobile");
     setLoader(true, "Verifying...");
     
     const regCheck = await db.collection("registrations").where("Mobile", "==", mob).get();
@@ -296,7 +307,7 @@ async function doMemberLogin() {
     const mem = await db.collection("members").where("Mobile", "==", mob).get();
     if(mem.empty) {
         setLoader(false);
-        alert("Mobile number not registered. Please contact office: 9586423232");
+        alert("Number not registered. Contact office: 9586423232");
         return;
     }
 
@@ -314,14 +325,14 @@ function createStudentForm() {
     list.innerHTML = "";
     for(let i=1; i<=c; i++) {
         list.innerHTML += `
-        <div class="student-entry shadow-sm">
+        <div class="student-entry">
             <h6>STUDENT ${i}</h6>
             <div class="row g-2">
                 <div class="col-md-4"><input type="text" placeholder="NAME" class="form-control s-name"></div>
                 <div class="col-md-4"><input type="text" placeholder="FATHER" class="form-control s-father"></div>
                 <div class="col-md-4"><input type="text" placeholder="SURNAME" class="form-control s-surname"></div>
-                <div class="col-md-4"><input type="text" placeholder="STD" class="form-control s-std"></div>
-                <div class="col-md-4"><input type="text" placeholder="SCHOOL" class="form-control s-school"></div>
+                <div class="col-md-3"><input type="text" placeholder="STD" class="form-control s-std"></div>
+                <div class="col-md-5"><input type="text" placeholder="SCHOOL" class="form-control s-school"></div>
                 <div class="col-md-4"><input type="file" class="form-control s-file"></div>
             </div>
         </div>`;
@@ -331,15 +342,19 @@ function createStudentForm() {
 async function finalSubmit() {
     const boxes = document.querySelectorAll('.student-entry');
     const students = [];
-    setLoader(true, "Uploading Docs...");
+    setLoader(true, "Submitting...");
     try {
         for(let box of boxes) {
             const file = box.querySelector('.s-file').files[0];
             const name = box.querySelector('.s-name').value;
-            if(!file || !name) throw new Error("Complete all student fields and files!");
+            if(!file || !name) throw new Error("Complete all fields!");
             const ref = storage.ref(`docs/${Date.now()}_${file.name}`);
             await ref.put(file);
-            students.push({ Name: name.toUpperCase(), Std: box.querySelector('.s-std').value.toUpperCase(), File: await ref.getDownloadURL() });
+            students.push({ 
+                Name: name.toUpperCase(), 
+                Std: box.querySelector('.s-std').value.toUpperCase(), 
+                File: await ref.getDownloadURL() 
+            });
         }
         const token = "BT" + Math.floor(1000 + Math.random() * 9000);
         const amount = students.length * 80;
@@ -353,23 +368,23 @@ async function finalSubmit() {
     setLoader(false);
 }
 
-// --- COMMITTEE / SCANNER LOGIC ---
+// --- COMMITTEE LOGIC ---
 function doCommitteeLogin() {
     const mob = document.getElementById('commMob').value;
-    const pass = document.getElementById('commPass').value;
+    // FIXED: Password logic
+    const pass = document.getElementById('commPass').value; 
+    
     if(pass === "Bat@3232" && mob.length >= 10) {
         committeeName = mob;
         showSection('comm-dash-sec');
         startScanner();
         loadCommTable();
-    } else { alert("Invalid Committee Credentials"); }
+    } else { alert("Invalid Credentials"); }
 }
 
 function startScanner() {
-    const scanner = new Html5Qrcode("reader");
-    scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (text) => {
-        searchByToken(text);
-    });
+    const sc = new Html5Qrcode("reader");
+    sc.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (t) => searchByToken(t));
 }
 
 async function searchByToken(tokenText = null) {
@@ -377,27 +392,23 @@ async function searchByToken(tokenText = null) {
     if(!t) return;
     const res = await db.collection("registrations").where("Token", "==", t).get();
     const div = document.getElementById('verify-res');
-    if(res.empty) { div.innerHTML = "<h4 class='text-danger'>TOKEN NOT FOUND!</h4>"; return; }
+    if(res.empty) { div.innerHTML = "NOT FOUND"; return; }
     
     const doc = res.docs[0];
     const d = doc.data();
     div.innerHTML = `
-        <div class="p-2 border-start border-4 border-primary">
+        <div class="p-2 border rounded">
             <h5>${d.MemberName}</h5>
-            <p class="mb-1">Member No: ${d.MemberNo}</p>
-            <p class="mb-1">Students: ${d.Students.length}</p>
+            <p>Students: ${d.Students.length}</p>
             <h3 class="text-success">COLLECT: ₹ ${d.Amount}</h3>
             <hr>
-            ${d.Status === "DELIVERED" ? 
-                `<h5 class="text-danger">ALREADY DELIVERED!</h5>` : 
-                `<button class="btn btn-primary w-100" onclick="markDelivered('${doc.id}')">MARK AS DELIVERED</button>`
-            }
+            ${d.Status === "DELIVERED" ? "ALREADY DONE" : `<button class="btn btn-primary w-100" onclick="markDelivered('${doc.id}')">MARK DELIVERED</button>`}
         </div>`;
 }
 
 async function markDelivered(id) {
     await db.collection("registrations").doc(id).update({ Status: "DELIVERED", VerifiedBy: committeeName });
-    alert("Record Updated!");
+    alert("Updated!");
     searchByToken(); loadCommTable();
 }
 
@@ -426,18 +437,17 @@ function setLoader(v, msg) {
 }
 
 function downloadCommExcel() {
-    const wb = XLSX.utils.table_to_book(document.getElementById("commTable"));
-    XLSX.writeFile(wb, "Committee_Collection.xlsx");
+    XLSX.writeFile(XLSX.utils.table_to_book(document.getElementById("commTable")), "Committee_Report.xlsx");
 }
 
 async function downloadRegistrations() {
     const snap = await db.collection("registrations").get();
     let rows = [];
-    snap.forEach(doc => { rows.push({ Token: doc.data().Token, Name: doc.data().MemberName, Mobile: doc.data().Mobile, Amt: doc.data().Amount }); });
-    const ws = XLSX.utils.json_to_sheet(rows);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Data");
-    XLSX.writeFile(wb, "SBJCESL_Report.xlsx");
+    snap.forEach(doc => { 
+        const d = doc.data();
+        rows.push({ Token: d.Token, Name: d.MemberName, Mobile: d.Mobile, Amt: d.Amount, Status: d.Status }); 
+    });
+    XLSX.writeFile(XLSX.utils.book_append_sheet(XLSX.utils.book_new(), XLSX.utils.json_to_sheet(rows), "Data"), "SBJCESL_Report.xlsx");
 }
 </script>
 </body>
