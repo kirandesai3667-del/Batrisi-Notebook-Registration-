@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notebook Registration System - SBJCESL</title>
+    
+    <!-- CSS Dependencies -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Roboto', sans-serif; background-color: #f4f7f6; }
+        .header-section { background: #004085; color: white; padding: 20px; border-bottom: 5px solid #ffc107; }
+        .card { border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-top: 20px; }
+        .btn-primary { background-color: #004085; border: none; }
+        input[type="text"], input[type="tel"], select { text-transform: uppercase; }
+        .hidden { display: none; }
+        .loading-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(255,255,255,0.8); z-index: 9999; display: none; justify-content: center; align-items: center; }
+        #reader { width: 100%; max-width: 400px; margin: auto; }
+        .verify-card { border-left: 5px solid #28a745; background: #e9f7ef; }
+    </style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loader">
+    <div class="spinner-border text-primary" role="status"></div>
+</div>
+
+<!-- Header -->
+<div class="header-section text-center">
+    <h3>SHREE BATRISI JAIN CO-OP EDUCATION SOCIETY LTD.</h3>
+    <p class="mb-0">Sheth Shri Hiralal Hargovandas Batrishi Hall, Ahmedabad - 380027</p>
+    <small>Reg No: GH/230 | GSTIN: 24AAATS6070J1ZE | Notebook Registration</small>
+</div>
+
+<div class="container mb-5">
+
+    <!-- NAVIGATION BUTTONS -->
+    <div class="text-center mt-3" id="nav-btns">
+        <button class="btn btn-sm btn-outline-primary mx-1" onclick="showSection('user-auth-sec')">Member Registration</button>
+        <button class="btn btn-sm btn-outline-dark mx-1" onclick="showSection('comm-login-sec')">Committee Login</button>
+        <button class="btn btn-sm btn-outline-secondary mx-1" onclick="showSection('admin-login-sec')">Admin Panel</button>
+    </div>
+
+    <!-- 1. MEMBER REGISTRATION SECTION -->
+    <div id="user-auth-sec" class="row justify-content-center mt-4">
+        <div class="col-md-5">
+            <div class="card p-4 text-center">
+                <h4>Member Login</h4>
+                <input type="tel" id="userMobile" class="form-control mb-3 text-center" placeholder="Enter Registered Mobile No" maxlength="10">
+                <button class="btn btn-primary btn-lg w-100" onclick="verifyMember()">Login / Verify</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="reg-form-sec" class="row justify-content-center hidden">
+        <div class="col-md-8">
+            <div class="card p-4">
+                <h4 class="border-bottom pb-2">Member Details</h4>
+                <div class="row g-3">
+                    <div class="col-md-6"><label>Member No:</label><input type="text" id="mNo" class="form-control" readonly></div>
+                    <div class="col-md-6"><label>Name:</label><input type="text" id="mName" class="form-control" readonly></div>
+                    <div class="col-md-4"><label>Other Member?</label><select id="otherMember" class="form-select"><option value="NO">NO</option><option value="YES">YES</option></select></div>
+                    <div class="col-md-4">
+                        <label>Students (Max 5):</label>
+                        <select id="studentCount" class="form-select" onchange="updateCalc()">
+                            <option value="">Select</option>
+                            <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label>Fees Amount (₹):</label>
+                        <input type="text" id="calcAmount" class="form-control fw-bold text-danger" readonly value="0">
+                    </div>
+                </div>
+                <div id="student-container" class="mt-4"></div>
+                <button class="btn btn-success btn-lg w-100 mt-4" onclick="submitRegistration()">SUBMIT REGISTRATION</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. COMMITTEE SECTION -->
+    <div id="comm-login-sec" class="row justify-content-center hidden mt-4">
+        <div class="col-md-4">
+            <div class="card p-4">
+                <h4 class="text-center">Committee Login</h4>
+                <input type="tel" id="commMobile" class="form-control mb-2" placeholder="Mobile Number">
+                <input type="password" id="commPass" class="form-control mb-3" placeholder="Password">
+                <button class="btn btn-dark w-100" onclick="checkCommitteeAuth()">Login</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="comm-dash-sec" class="row hidden mt-4">
+        <div class="col-md-10 mx-auto">
+            <div class="card p-4">
+                <div class="d-flex justify-content-between">
+                    <h5>Committee Dashboard (Verified By: <span id="comm-name-disp"></span>)</h5>
+                    <button class="btn btn-outline-danger btn-sm" onclick="window.location.reload()">Logout</button>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col-md-6 border-end">
+                        <h6>Scan QR Code</h6>
+                        <div id="reader"></div>
+                        <div class="input-group mt-3">
+                            <input type="text" id="manualToken" class="form-control" placeholder="Manual Token Entry">
+                            <button class="btn btn-primary" onclick="searchByToken()">Search</button>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Verification Result</h6>
+                        <div id="verify-result" class="p-3 border rounded bg-light" style="min-height: 200px;">
+                            <p class="text-muted text-center">Scan or Search for token details...</p>
+                        </div>
+                    </div>
+                </div>
+                <hr>
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <h6>Today's Distribution List</h6>
+                    <button class="btn btn-sm btn-success" onclick="exportVerifiedExcel()">Download Excel</button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered mt-2">
+                        <thead><tr><th>Token</th><th>Name</th><th>Students</th><th>Amount</th><th>Status</th></tr></thead>
+                        <tbody id="verifiedTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. ADMIN SECTION -->
+    <div id="admin-login-sec" class="row justify-content-center hidden mt-4">
+        <div class="col-md-4">
+            <div class="card p-4">
+                <h4 class="text-center">Admin Login</h4>
+                <input type="text" id="adminId" class="form-control mb-2" placeholder="Admin ID">
+                <input type="password" id="adminPass" class="form-control mb-3" placeholder="Password">
+                <button class="btn btn-dark w-100" onclick="checkAdminAuth()">Login</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADMIN DASHBOARD (Same as before with CSV & Master Data) -->
+    <div id="admin-dash-sec" class="row hidden">
+        <!-- Admin table content here -->
+    </div>
+
+    <!-- SUCCESS TOKEN DISPLAY -->
+    <div id="success-sec" class="row justify-content-center hidden mt-5">
+        <div class="col-md-6 text-center">
+            <div class="card p-5 border-success">
+                <h2 class="text-success">Registration Done!</h2>
+                <div id="qr-code" class="my-3 d-flex justify-content-center"></div>
+                <h3>TOKEN: <span id="disp-token"></span></h3>
+                <p>FEES PAYABLE: ₹<span id="disp-amt"></span></p>
+                <button class="btn btn-primary" onclick="window.location.reload()">Finish</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Scripts -->
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
+<script src="https://unpkg.com/html5-qrcode"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<script>
+// --- FIREBASE CONFIG ---
+const firebaseConfig = {
+    apiKey: "AIzaSyDbZ4T8264CDQ5LSoH_4L0luB5VKQbiqkU",
+    authDomain: "batrisi-latest-app.firebaseapp.com",
+    projectId: "batrisi-latest-app",
+    storageBucket: "batrisi-latest-app.firebasestorage.app",
+    messagingSenderId: "175592360155",
+    appId: "1:175592360155:web:ba95f9aba4558fda9d64fe"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const storage = firebase.storage();
+
+let loggedInCommitteeMember = "";
+let currentFoundRegistrationDoc = null;
+
+// --- NAVIGATION ---
+function showSection(id) {
+    ['user-auth-sec','reg-form-sec','comm-login-sec','comm-dash-sec','admin-login-sec','admin-dash-sec','success-sec'].forEach(s => {
+        document.getElementById(s).classList.add('hidden');
+    });
+    document.getElementById(id).classList.remove('hidden');
+}
+
+function updateCalc() {
+    const count = document.getElementById('studentCount').value;
+    document.getElementById('calcAmount').value = count ? count * 80 : 0;
+    generateStudentFields();
+}
+
+function generateStudentFields() {
+    const count = parseInt(document.getElementById('studentCount').value);
+    const container = document.getElementById('student-container');
+    container.innerHTML = "";
+    for(let i=1; i<=count; i++) {
+        container.innerHTML += `
+            <div class="p-3 border rounded mb-2 bg-white">
+                <h6>Student ${i} Details</h6>
+                <div class="row g-2">
+                    <div class="col-md-4"><input type="text" placeholder="NAME" class="form-control s-name"></div>
+                    <div class="col-md-4"><input type="text" placeholder="FATHER" class="form-control s-father"></div>
+                    <div class="col-md-4"><input type="text" placeholder="SURNAME" class="form-control s-surname"></div>
+                    <div class="col-md-3"><input type="text" placeholder="STD" class="form-control s-std"></div>
+                    <div class="col-md-5"><input type="text" placeholder="SCHOOL" class="form-control s-school"></div>
+                    <div class="col-md-4"><input type="file" class="form-control s-file"></div>
+                </div>
+            </div>`;
+    }
+}
+
+// --- VERIFY MEMBER & SUBMIT ---
+async function verifyMember() {
+    const mob = document.getElementById('userMobile').value;
+    const snap = await db.collection("members").where("Mobile", "==", mob).get();
+    if(snap.empty) return alert("Number Not Registered!");
+    
+    // Check if already registered
+    const regCheck = await db.collection("registrations").where("mMobile", "==", mob).get();
+    if(!regCheck.empty) {
+        const d = regCheck.docs[0].data();
+        showSuccess(d.token, d.amount);
+        return;
+    }
+
+    const m = snap.docs[0].data();
+    document.getElementById('mNo').value = m.MemberNo;
+    document.getElementById('mName').value = m.Name;
+    showSection('reg-form-sec');
+}
+
+async function submitRegistration() {
+    const count = document.getElementById('studentCount').value;
+    const amt = document.getElementById('calcAmount').value;
+    const blocks = document.querySelectorAll('#student-container > div');
+    const students = [];
+
+    showLoader(true);
+    try {
+        for(let block of blocks) {
+            const file = block.querySelector('.s-file').files[0];
+            if(!file) throw new Error("Please upload all marksheets!");
+            
+            const fileRef = storage.ref(`docs/${Date.now()}_${file.name}`);
+            await fileRef.put(file);
+            const url = await fileRef.getDownloadURL();
+
+            students.push({
+                name: block.querySelector('.s-name').value.toUpperCase(),
+                std: block.querySelector('.s-std').value.toUpperCase(),
+                school: block.querySelector('.s-school').value.toUpperCase(),
+                file: url
+            });
+        }
+
+        const token = "BT" + Math.floor(1000 + Math.random() * 9000);
+        const data = {
+            token, amount: amt, mMobile: document.getElementById('userMobile').value,
+            mName: document.getElementById('mName').value, mNo: document.getElementById('mNo').value,
+            students, status: "PENDING", date: new Date().toLocaleDateString()
+        };
+        await db.collection("registrations").add(data);
+        showSuccess(token, amt);
+    } catch(e) { alert(e.message); }
+    showLoader(false);
+}
+
+function showSuccess(token, amt) {
+    showSection('success-sec');
+    document.getElementById('disp-token').innerText = token;
+    document.getElementById('disp-amt').innerText = amt;
+    new QRCode(document.getElementById("qr-code"), { text: token, width: 128, height: 128 });
+}
+
+// --- COMMITTEE DASHBOARD LOGIC ---
+function checkCommitteeAuth() {
+    const mob = document.getElementById('commMobile').value;
+    const pass = document.getElementById('commPass').value;
+    if(pass === "Bat@3232" && mob.length >= 10) {
+        loggedInCommitteeMember = mob;
+        document.getElementById('comm-name-disp').innerText = mob;
+        showSection('comm-dash-sec');
+        startScanner();
+        loadVerifiedList();
+    } else { alert("Invalid Committee Credentials"); }
+}
+
+function startScanner() {
+    const html5QrCode = new Html5Qrcode("reader");
+    html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, 
+        (decodedText) => { searchByToken(decodedText); }
+    );
+}
+
+async function searchByToken(token = null) {
+    const t = token || document.getElementById('manualToken').value.toUpperCase();
+    if(!t) return;
+
+    const snap = await db.collection("registrations").where("token", "==", t).get();
+    const resDiv = document.getElementById('verify-result');
+
+    if(snap.empty) {
+        resDiv.innerHTML = `<h5 class="text-danger">INVALID TOKEN!</h5>`;
+        return;
+    }
+
+    const doc = snap.docs[0];
+    const d = doc.data();
+    currentFoundRegistrationDoc = doc.id;
+
+    resDiv.innerHTML = `
+        <div class="verify-card p-2">
+            <p><b>Member:</b> ${d.mName} (${d.mNo})</p>
+            <p><b>Students:</b> ${d.students.length}</p>
+            <h4 class="text-primary">COLLECT AMOUNT: ₹${d.amount}</h4>
+            <hr>
+            ${d.status === "DELIVERED" ? 
+                `<h5 class="text-danger text-center">ALREADY DELIVERED</h5>` : 
+                `<button class="btn btn-success w-100" onclick="markDelivered()">MARK AS DELIVERED & COLLECTED</button>`
+            }
+        </div>
+    `;
+}
+
+async function markDelivered() {
+    if(!currentFoundRegistrationDoc) return;
+    await db.collection("registrations").doc(currentFoundRegistrationDoc).update({
+        status: "DELIVERED",
+        verifiedBy: loggedInCommitteeMember,
+        deliveryDate: new Date().toLocaleString()
+    });
+    alert("Record Updated Successfully!");
+    searchByToken(); // Refresh UI
+    loadVerifiedList();
+}
+
+async function loadVerifiedList() {
+    const snap = await db.collection("registrations")
+                   .where("verifiedBy", "==", loggedInCommitteeMember).get();
+    const tbody = document.getElementById('verifiedTableBody');
+    tbody.innerHTML = "";
+    snap.forEach(doc => {
+        const d = doc.data();
+        tbody.innerHTML += `<tr><td>${d.token}</td><td>${d.mName}</td><td>${d.students.length}</td><td>₹${d.amount}</td><td>${d.status}</td></tr>`;
+    });
+}
+
+function exportVerifiedExcel() {
+    const table = document.getElementById("verifiedTableBody");
+    const wb = XLSX.utils.table_to_book(table);
+    XLSX.writeFile(wb, "Committee_Collection_Report.xlsx");
+}
+
+function showLoader(v) { document.getElementById('loader').style.display = v ? 'flex' : 'none'; }
+</script>
+</body>
+</html>
