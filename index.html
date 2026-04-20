@@ -13,40 +13,40 @@
         :root { --primary: #003366; --gold: #ffc107; --bg: #f4f7f9; }
         body { background-color: var(--bg); font-family: 'Segoe UI', Tahoma, sans-serif; }
         .header { background: var(--primary); color: white; padding: 20px; border-bottom: 5px solid var(--gold); text-align: center; }
-        .header img { height: 80px; margin-bottom: 10px; border-radius: 10px; background: white; padding: 5px; }
+        .header img { height: 85px; margin-bottom: 10px; border-radius: 8px; background: white; padding: 5px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
         .card { border-radius: 15px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.1); margin-top: 20px; }
         .btn-primary { background-color: var(--primary); border: none; }
         .hidden { display: none !important; }
         
-        /* Auto Capitalization */
         input[type="text"], input[type="tel"], select, textarea { text-transform: uppercase; font-weight: 500; }
         input[type="password"], .pass-field { text-transform: none !important; font-family: sans-serif; }
         
         .student-entry { background: #fff; border: 1px solid #dee2e6; padding: 20px; border-radius: 12px; margin-bottom: 15px; border-left: 6px solid var(--primary); }
         #reader { width: 100%; max-width: 400px; margin: auto; border-radius: 10px; overflow: hidden; border: 2px solid var(--primary); }
-        #loader { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.9); z-index:10000; display:none; flex-direction:column; align-items:center; justify-content:center; }
+        #loader { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.95); z-index:10000; display:none; flex-direction:column; align-items:center; justify-content:center; }
         .nav-btn { cursor: pointer; padding: 10px 20px; font-weight: bold; border-radius: 8px; transition: 0.3s; color: var(--primary); border: 1px solid transparent; }
         .nav-btn:hover { background: #e9ecef; }
-        .input-group-text { cursor: pointer; background: white; }
+        .progress-container { width: 80%; max-width: 400px; height: 10px; background: #ddd; border-radius: 5px; margin-top: 15px; overflow: hidden; }
+        .progress-bar { height: 100%; background: var(--primary); width: 0%; transition: 0.3s; }
     </style>
 </head>
 <body onload="checkRememberMe()">
 
 <div id="loader">
-    <div class="spinner-border text-primary" role="status"></div>
-    <p class="mt-2 fw-bold" id="loader-text">Working... Please wait...</p>
+    <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;"></div>
+    <p class="mt-3 fw-bold fs-5" id="loader-text">Initializing...</p>
+    <div class="progress-container"><div class="progress-bar" id="load-progress"></div></div>
+    <p class="small text-muted mt-2" id="loader-subtext">Please do not close this window</p>
 </div>
 
 <!-- Header -->
 <div class="header shadow">
-    <!-- Logo display fix -->
-    <img src="logo.png" alt="SBJCESL LOGO" onerror="this.src='https://via.placeholder.com/80?text=LOGO'">
+    <img src="logo.png" alt="SBJCESL" onerror="this.src='https://via.placeholder.com/80?text=LOGO'">
     <h3 class="fw-bold m-0">SHREE BATRISI JAIN CO-OP EDUCATION SOCIETY LTD.</h3>
     <p class="m-0 small opacity-75">Ahmedabad | Notebook Registration & Distribution Portal</p>
-    <small>Office: 9586423232 | GSTIN: 24AAATS6070J1ZE</small>
 </div>
 
-<!-- Navigation Menu -->
+<!-- Navigation -->
 <div class="container mt-3">
     <div class="d-flex justify-content-center bg-white p-2 rounded shadow-sm border">
         <div class="nav-btn mx-2" onclick="showSection('member-login-sec')">MEMBER LOGIN</div>
@@ -104,21 +104,18 @@
         </div>
     </div>
 
-    <!-- 3. COMMITTEE LOGIN & SCANNER -->
+    <!-- 3. COMMITTEE LOGIN -->
     <div id="comm-login-sec" class="row justify-content-center section hidden">
         <div class="col-md-4">
             <div class="card p-4 border-top border-4 border-dark shadow">
                 <h4 class="text-center mb-4">Committee Login</h4>
                 <div class="mb-3">
-                    <label class="small fw-bold">Committee Mobile</label>
+                    <label class="small fw-bold">Mobile</label>
                     <input type="tel" id="commMob" class="form-control" placeholder="Mobile">
                 </div>
                 <div class="mb-3">
                     <label class="small fw-bold">Password</label>
-                    <div class="input-group">
-                        <input type="password" id="commPass" class="form-control pass-field" placeholder="Password">
-                        <span class="input-group-text" onclick="togglePassword('commPass')"><i class="bi bi-eye"></i></span>
-                    </div>
+                    <input type="password" id="commPass" class="form-control pass-field" placeholder="Password">
                 </div>
                 <button class="btn btn-dark w-100 fw-bold" onclick="doCommitteeLogin()">LOGIN COMMITTEE</button>
             </div>
@@ -129,60 +126,35 @@
         <div class="col-md-12">
             <div class="card p-4 shadow">
                 <div class="d-flex justify-content-between border-bottom pb-2 mb-3">
-                    <h5 class="fw-bold"><i class="bi bi-qr-code-scan"></i> Distribution Control</h5>
+                    <h5 class="fw-bold">Distribution Control</h5>
                     <button class="btn btn-outline-danger btn-sm" onclick="location.reload()">LOGOUT</button>
                 </div>
                 <div class="row">
                     <div class="col-md-5 border-end text-center">
-                        <h6 class="fw-bold">Camera Scanner</h6>
                         <div id="reader" class="mb-3 shadow-sm"></div>
-                        <div class="input-group mt-3">
-                            <input type="text" id="manualToken" class="form-control" placeholder="Manual Token Entry">
-                            <button class="btn btn-primary" onclick="searchByToken()">SEARCH</button>
-                        </div>
+                        <input type="text" id="manualToken" class="form-control mb-2" placeholder="Manual Token Entry">
+                        <button class="btn btn-primary w-100" onclick="searchByToken()">SEARCH</button>
                     </div>
-                    <div class="col-md-7 ps-4">
-                        <h6 class="fw-bold">Member Details</h6>
-                        <div id="verify-res" class="p-4 border rounded bg-white shadow-sm" style="min-height: 250px;">
-                            <p class="text-muted text-center mt-5">Please scan a Token QR to verify collection details.</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="mt-4">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <h6 class="fw-bold">Today's Verifications</h6>
-                        <button class="btn btn-sm btn-success" onclick="downloadCommExcel()">Export To Excel</button>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="table table-bordered table-sm small">
-                            <thead class="table-dark"><tr><th>Token</th><th>Name</th><th>Students</th><th>Amount</th><th>Status</th></tr></thead>
-                            <tbody id="commTable"></tbody>
-                        </table>
+                    <div class="col-md-7 ps-4" id="verify-res">
+                        <p class="text-muted text-center mt-5">Scan QR to verify collection details.</p>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- 4. ADMIN LOGIN & DASHBOARD -->
+    <!-- 4. ADMIN PANEL -->
     <div id="admin-login-sec" class="row justify-content-center section hidden">
         <div class="col-md-4">
             <div class="card p-4 border-top border-4 border-danger shadow">
-                <h4 class="text-center mb-4 text-danger fw-bold">Admin Master Access</h4>
+                <h4 class="text-center mb-4 text-danger fw-bold">Admin Panel</h4>
                 <div class="mb-3">
                     <label class="small fw-bold">Admin ID</label>
-                    <input type="text" id="admID" class="form-control" placeholder="ID (BATRISI)">
+                    <input type="text" id="admID" class="form-control" placeholder="BATRISI">
                 </div>
                 <div class="mb-3">
                     <label class="small fw-bold">Password</label>
-                    <div class="input-group">
-                        <input type="password" id="admPass" class="form-control pass-field" placeholder="Password">
-                        <span class="input-group-text" onclick="togglePassword('admPass')"><i class="bi bi-eye"></i></span>
-                    </div>
-                </div>
-                <div class="form-check mb-3">
-                    <input class="form-check-input" type="checkbox" id="admRemember">
-                    <label class="form-check-label small" for="admRemember">Remember Credentials</label>
+                    <input type="password" id="admPass" class="form-control pass-field" placeholder="Password">
                 </div>
                 <button class="btn btn-danger w-100 fw-bold" onclick="doAdminLogin()">LOGIN ADMIN</button>
             </div>
@@ -193,54 +165,50 @@
         <div class="col-md-12">
             <div class="card p-4 shadow">
                 <div class="d-flex justify-content-between border-bottom pb-2 mb-3">
-                    <h4 class="text-danger fw-bold">System Management Panel</h4>
+                    <h4 class="text-danger fw-bold">Master Management</h4>
                     <button class="btn btn-outline-danger btn-sm" onclick="location.reload()">LOGOUT</button>
                 </div>
                 <div class="row g-4">
                     <div class="col-md-6 border-end">
                         <div class="p-3 bg-light rounded border border-primary shadow-sm">
-                            <h6 class="fw-bold text-primary">STEP 1: CSV FAST UPLOAD (OVERWRITE)</h6>
-                            <p class="x-small text-muted mb-2">Order: MemberNo, MemberName, Native, MobileNumber, Address</p>
+                            <h6 class="fw-bold text-primary">UPLOAD MASTER CSV (FAST)</h6>
+                            <p class="x-small text-muted mb-2">MemberNo, Name, Native, Mobile, Address</p>
                             <input type="file" id="masterCSV" class="form-control mb-2" accept=".csv">
-                            <button class="btn btn-primary btn-sm w-100 fw-bold shadow-sm" onclick="uploadMasterData()">UPLOAD MASTER DATA</button>
+                            <button class="btn btn-primary w-100 fw-bold" onclick="uploadMasterData()">START FAST UPLOAD</button>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="p-3 bg-light rounded border border-warning shadow-sm">
-                            <h6 class="fw-bold text-dark">STEP 2: CHANGE MEMBER MOBILE</h6>
+                            <h6>UPDATE MEMBER MOBILE</h6>
                             <div class="input-group mb-2">
-                                <input type="text" id="searchMNo" class="form-control" placeholder="Enter Member No">
-                                <button class="btn btn-dark btn-sm" onclick="searchMemberToUpdate()">FIND</button>
+                                <input type="text" id="searchMNo" class="form-control" placeholder="Member No">
+                                <button class="btn btn-dark" onclick="searchMemberToUpdate()">FIND</button>
                             </div>
-                            <div id="update-box" class="hidden border-top pt-2">
-                                <p class="small mb-1">Current Member: <b id="upNameDisp"></b></p>
-                                <input type="tel" id="newMobInput" class="form-control mb-2 shadow-sm" placeholder="New Mobile Number">
-                                <button class="btn btn-warning btn-sm w-100 fw-bold shadow-sm" onclick="updateMobileFinal()">SAVE UPDATED NUMBER</button>
+                            <div id="update-box" class="hidden">
+                                <p class="small mb-1">Name: <b id="upNameDisp"></b></p>
+                                <input type="tel" id="newMobInput" class="form-control mb-2" placeholder="New Mobile">
+                                <button class="btn btn-warning btn-sm w-100" onclick="updateMobileFinal()">SAVE MOBILE</button>
                             </div>
                         </div>
                     </div>
                 </div>
-                <hr>
-                <div class="text-center mt-2">
-                    <h6 class="fw-bold mb-3 text-muted">Generate System Reports</h6>
-                    <button class="btn btn-success mx-1 px-4 shadow-sm" onclick="downloadFullExcel()">EXPORT EXCEL</button>
-                    <button class="btn btn-danger mx-1 px-4 shadow-sm" onclick="exportFullPDF()">EXPORT PDF (LANDSCAPE)</button>
+                <div class="mt-4 text-center">
+                    <button class="btn btn-success mx-1" onclick="downloadFullExcel()">EXPORT EXCEL</button>
+                    <button class="btn btn-danger mx-1" onclick="exportFullPDF()">EXPORT PDF</button>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- 5. SUCCESS SCREEN -->
-    <div id="success-sec" class="row justify-content-center section hidden mt-4">
+    <div id="success-sec" class="row justify-content-center section hidden">
         <div class="col-md-6 text-center">
             <div class="card p-5 border-success shadow-lg">
-                <h2 class="text-success fw-bold">REGISTRATION SUCCESSFUL!</h2>
-                <div id="qrcode" class="d-flex justify-content-center my-4 p-2 bg-white border d-inline-block shadow-sm"></div>
-                <h3 id="resToken" class="fw-bold text-dark"></h3>
-                <h4 class="text-primary fw-bold" id="resAmt"></h4>
-                <p class="text-muted mt-2 small">Take a screenshot. Registration successful for the provided mobile number.</p>
-                <hr>
-                <button class="btn btn-primary btn-lg px-5 mt-3 shadow" onclick="location.reload()">OK, FINISH</button>
+                <h2 class="text-success fw-bold">REGISTRATION SUCCESS!</h2>
+                <div id="qrcode" class="d-flex justify-content-center my-4"></div>
+                <h3 id="resToken" class="fw-bold"></h3>
+                <h4 id="resAmt" class="text-primary"></h4>
+                <button class="btn btn-primary btn-lg px-5 mt-3" onclick="location.reload()">FINISH</button>
             </div>
         </div>
     </div>
@@ -258,7 +226,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
 
 <script>
-// --- FIREBASE CONFIGURATION ---
+// --- FIREBASE ---
 const firebaseConfig = {
     apiKey: "AIzaSyDbZ4T8264CDQ5LSoH_4L0luB5VKQbiqkU",
     authDomain: "batrisi-latest-app.firebaseapp.com",
@@ -270,19 +238,13 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const storage = firebase.storage();
-let activeCommUser = "";
 
-// --- UTILS ---
-function togglePassword(id) {
-    const p = document.getElementById(id); p.type = p.type === "password" ? "text" : "password";
-}
-
-function checkRememberMe() {
-    if(localStorage.getItem('admID')) {
-        document.getElementById('admID').value = localStorage.getItem('admID');
-        document.getElementById('admPass').value = localStorage.getItem('admPass');
-        document.getElementById('admRemember').checked = true;
-    }
+// --- UI UTILS ---
+function setLoader(show, msg = "", progress = 0) {
+    const l = document.getElementById('loader');
+    l.style.display = show ? 'flex' : 'none';
+    document.getElementById('loader-text').innerText = msg;
+    document.getElementById('load-progress').style.width = progress + '%';
 }
 
 function showSection(id) {
@@ -290,93 +252,89 @@ function showSection(id) {
     document.getElementById(id).classList.remove('hidden');
 }
 
-function setLoader(v, msg="Processing...") {
-    document.getElementById('loader-text').innerText = msg;
-    document.getElementById('loader').style.display = v ? 'flex' : 'none';
+function checkRememberMe() {
+    if(localStorage.getItem('admID')) {
+        document.getElementById('admID').value = localStorage.getItem('admID');
+        document.getElementById('admPass').value = localStorage.getItem('admPass');
+    }
 }
 
-// --- ADMIN PANEL LOGIC ---
-function doAdminLogin() {
-    const id = document.getElementById('admID').value.trim().toUpperCase();
-    const pass = document.getElementById('admPass').value;
-    if(id === "BATRISI" && pass === "Bat@3232") {
-        if(document.getElementById('admRemember').checked) {
-            localStorage.setItem('admID', id); localStorage.setItem('admPass', pass);
-        }
-        showSection('admin-dash-sec');
-    } else { alert("Error: Invalid Credentials!"); }
-}
-
+// --- ADMIN: FAST CSV UPLOAD ---
 async function uploadMasterData() {
     const fileInput = document.getElementById('masterCSV');
     const file = fileInput.files[0];
-    if(!file) return alert("Select CSV File First");
-    
-    const reader = new FileReader();
-    reader.onload = async function(e) {
-        setLoader(true, "Fast Uploading Master Records...");
-        const text = e.target.result;
-        const lines = text.split(/\r?\n/).slice(1);
-        let batch = db.batch();
-        let count = 0;
-        let totalProcessed = 0;
+    if(!file) return alert("Please select CSV file first!");
 
-        for(let line of lines) {
-            if(!line.trim()) continue;
-            const d = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g);
-            if(d && d.length >= 4) {
-                const mno = d[0].replace(/"/g, "").trim();
-                const docRef = db.collection("members").doc(mno);
+    const reader = new FileReader();
+    reader.readAsText(file);
+    reader.onload = async function(e) {
+        const text = e.target.result;
+        const lines = text.split(/\r?\n/).filter(line => line.trim() !== "").slice(1);
+        const totalLines = lines.length;
+        
+        if(totalLines === 0) return alert("CSV file is empty!");
+        
+        setLoader(true, "Starting Upload of " + totalLines + " records...", 0);
+
+        let count = 0;
+        let batch = db.batch();
+        let batchCount = 0;
+
+        try {
+            for(let i = 0; i < totalLines; i++) {
+                const line = lines[i];
+                // Regex to handle commas inside quotes in CSV
+                const d = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g);
                 
-                // Fast Set (Overwrites if exists)
-                batch.set(docRef, {
-                    MemberNo: mno,
-                    Name: d[1].replace(/"/g, "").trim().toUpperCase(),
-                    Native: d[2].replace(/"/g, "").trim().toUpperCase(),
-                    Mobile: d[3].replace(/"/g, "").trim(),
-                    Address: d.slice(4).join(", ").replace(/"/g, "").trim().toUpperCase()
-                });
-                count++;
-                if(count === 480) { 
+                if(d && d.length >= 4) {
+                    const mno = d[0].replace(/"/g, "").trim();
+                    const docRef = db.collection("members").doc(mno);
+                    
+                    batch.set(docRef, {
+                        MemberNo: mno,
+                        Name: d[1].replace(/"/g, "").trim().toUpperCase(),
+                        Native: d[2].replace(/"/g, "").trim().toUpperCase(),
+                        Mobile: d[3].replace(/"/g, "").trim(),
+                        Address: d.slice(4).join(", ").replace(/"/g, "").trim().toUpperCase()
+                    });
+                    
+                    count++;
+                    batchCount++;
+                }
+
+                // Firestore batch limit is 500. We commit at 400 for safety.
+                if(batchCount >= 400) {
                     await batch.commit();
                     batch = db.batch();
-                    totalProcessed += count;
-                    count = 0;
+                    batchCount = 0;
+                    let progress = Math.round((i / totalLines) * 100);
+                    setLoader(true, "Uploading: " + i + " / " + totalLines, progress);
                 }
             }
+
+            // Commit remaining
+            if(batchCount > 0) {
+                await batch.commit();
+            }
+
+            setLoader(false);
+            alert("SUCCESS! " + count + " Members updated in database.");
+        } catch (err) {
+            console.error(err);
+            setLoader(false);
+            alert("Error during upload. Please check your internet or CSV format.");
         }
-        await batch.commit();
-        totalProcessed += count;
-        setLoader(false); 
-        alert("Success: " + totalProcessed + " Master Records Uploaded & Replaced!");
     };
-    reader.readAsText(file);
 }
 
-async function searchMemberToUpdate() {
-    const mno = document.getElementById('searchMNo').value.trim();
-    const doc = await db.collection("members").doc(mno).get();
-    if(doc.exists) {
-        document.getElementById('update-box').classList.remove('hidden');
-        document.getElementById('upNameDisp').innerText = doc.data().Name;
-        document.getElementById('newMobInput').value = doc.data().Mobile;
-    } else { alert("Member Number Not Found!"); }
-}
-
-async function updateMobileFinal() {
-    const mno = document.getElementById('searchMNo').value.trim();
-    const newMob = document.getElementById('newMobInput').value.trim();
-    if(newMob.length < 10) return alert("Enter 10 Digit Mobile No.");
-    await db.collection("members").doc(mno).update({ Mobile: newMob });
-    alert("Mobile Number Updated!");
-}
-
-// --- MEMBER REGISTRATION ---
+// --- MEMBER LOGIN & REGISTRATION ---
 async function doMemberLogin() {
     const mob = document.getElementById('memMobile').value.trim();
-    if(mob.length < 10) return alert("Invalid Mobile Number");
-    setLoader(true, "Verifying Identity...");
-
+    if(mob.length < 10) return alert("Enter valid mobile number!");
+    
+    setLoader(true, "Verifying Mobile...");
+    
+    // Check if already registered
     const regCheck = await db.collection("registrations").where("Mobile", "==", mob).get();
     if(!regCheck.empty) {
         const d = regCheck.docs[0].data();
@@ -384,9 +342,12 @@ async function doMemberLogin() {
         setLoader(false); return;
     }
 
+    // Search in Master
     const memSnap = await db.collection("members").where("Mobile", "==", mob).get();
     if(memSnap.empty) {
-        setLoader(false); alert("Mobile Number not found! Contact Office."); return;
+        setLoader(false);
+        alert("Mobile Number Not Registered. Please contact office: 9586423232");
+        return;
     }
 
     const m = memSnap.docs[0].data();
@@ -394,8 +355,9 @@ async function doMemberLogin() {
     document.getElementById('dispMName').value = m.Name;
     document.getElementById('dispNative').value = m.Native;
     document.getElementById('dispAddr').value = m.Address;
-    showSection('reg-form-sec');
+    
     setLoader(false);
+    showSection('reg-form-sec');
 }
 
 function createStudentForm() {
@@ -412,7 +374,7 @@ function createStudentForm() {
                 <div class="col-md-4"><input type="text" placeholder="FATHER" class="form-control s-father"></div>
                 <div class="col-md-4"><input type="text" placeholder="SURNAME" class="form-control s-surname"></div>
                 <div class="col-md-3"><input type="text" placeholder="STD" class="form-control s-std"></div>
-                <div class="col-md-5"><input type="text" placeholder="SCHOOL/COLLEGE" class="form-control s-school"></div>
+                <div class="col-md-5"><input type="text" placeholder="SCHOOL/COLLEGE NAME" class="form-control s-school"></div>
                 <div class="col-md-4"><label class="small fw-bold">MARKSHEET:</label><input type="file" class="form-control s-file"></div>
             </div>
         </div>`;
@@ -422,13 +384,13 @@ function createStudentForm() {
 async function finalSubmit() {
     const entries = document.querySelectorAll('.student-entry');
     const uploadPromises = [];
-    setLoader(true, "Uploading All Marksheets Fast...");
-
+    
+    setLoader(true, "Uploading Documents Fast...", 20);
     try {
         for(let entry of entries) {
             const file = entry.querySelector('.s-file').files[0];
             const name = entry.querySelector('.s-name').value;
-            if(!file || !name) throw new Error("Please complete all student details!");
+            if(!file || !name) throw new Error("Please complete all student details and marksheets!");
             
             const storageRef = storage.ref(`docs/${Date.now()}_${file.name}`);
             const uploadTask = storageRef.put(file).then(async (snap) => {
@@ -451,57 +413,39 @@ async function finalSubmit() {
             MemberName: document.getElementById('dispMName').value, MemberNo: document.getElementById('dispMNo').value,
             Students: studentData, Status: "PENDING", Date: new Date().toLocaleDateString()
         });
+
         showSuccess(token, amount);
     } catch(e) { alert(e.message); }
     setLoader(false);
 }
 
-// --- COMMITTEE SCANNER ---
-function doCommitteeLogin() {
-    const mob = document.getElementById('commMob').value.trim();
-    const pass = document.getElementById('commPass').value;
-    if(pass === "Bat@3232" && mob.length >= 10) {
-        activeCommUser = mob;
-        showSection('comm-dash-sec');
-        const scanner = new Html5Qrcode("reader");
-        scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (text) => searchByToken(text));
-        loadCommTable();
+// --- REMAINING FUNCTIONS (ADMIN, COMM, EXPORTS) ---
+function doAdminLogin() {
+    const id = document.getElementById('admID').value.trim().toUpperCase();
+    const pass = document.getElementById('admPass').value;
+    if(id === "BATRISI" && pass === "Bat@3232") {
+        localStorage.setItem('admID', id); localStorage.setItem('admPass', pass);
+        showSection('admin-dash-sec');
     } else { alert("Invalid Credentials!"); }
 }
 
-async function searchByToken(tokenText = null) {
-    const t = tokenText || document.getElementById('manualToken').value.toUpperCase();
-    if(!t) return;
-    const res = await db.collection("registrations").where("Token", "==", t).get();
-    const div = document.getElementById('verify-res');
-    if(res.empty) { div.innerHTML = "<h4 class='text-danger'>NOT FOUND!</h4>"; return; }
-    
-    const doc = res.docs[0]; const d = doc.data();
-    div.innerHTML = `
-        <div class="p-2">
-            <h5><b>Name:</b> ${d.MemberName} (${d.MemberNo})</h5>
-            <p><b>Students:</b> ${d.Students.length} | <b>Amount:</b> ₹ ${d.Amount}</p>
-            <hr>
-            ${d.Status === "DELIVERED" ? `<h4 class="text-danger">ALREADY DELIVERED</h4>` : 
-            `<button class="btn btn-primary w-100" onclick="markDelivered('${doc.id}')">MARK AS DELIVERED</button>`}
-        </div>`;
+async function searchMemberToUpdate() {
+    const mno = document.getElementById('searchMNo').value.trim();
+    const doc = await db.collection("members").doc(mno).get();
+    if(doc.exists) {
+        document.getElementById('update-box').classList.remove('hidden');
+        document.getElementById('upNameDisp').innerText = doc.data().Name;
+        document.getElementById('newMobInput').value = doc.data().Mobile;
+    } else { alert("Member Not Found!"); }
 }
 
-async function markDelivered(id) {
-    await db.collection("registrations").doc(id).update({ Status: "DELIVERED", VerifiedBy: activeCommUser });
-    alert("Record Updated!"); searchByToken(); loadCommTable();
+async function updateMobileFinal() {
+    const mno = document.getElementById('searchMNo').value.trim();
+    const newMob = document.getElementById('newMobInput').value.trim();
+    await db.collection("members").doc(mno).update({ Mobile: newMob });
+    alert("Mobile Updated!");
 }
 
-async function loadCommTable() {
-    const snap = await db.collection("registrations").where("VerifiedBy", "==", activeCommUser).get();
-    const tb = document.getElementById('commTable'); tb.innerHTML = "";
-    snap.forEach(doc => { 
-        const d = doc.data(); 
-        tb.innerHTML += `<tr><td>${d.Token}</td><td>${d.MemberName}</td><td>${d.Students.length}</td><td>₹ ${d.Amount}</td><td>${d.Status}</td></tr>`; 
-    });
-}
-
-// --- EXPORTS & SUCCESS ---
 function showSuccess(t, a) {
     showSection('success-sec');
     document.getElementById('resToken').innerText = "TOKEN: " + t;
@@ -510,22 +454,46 @@ function showSuccess(t, a) {
     new QRCode(document.getElementById("qrcode"), { text: t, width: 160, height: 160 });
 }
 
+// Committee
+function doCommitteeLogin() {
+    const pass = document.getElementById('commPass').value;
+    if(pass === "Bat@3232") {
+        showSection('comm-dash-sec');
+        const scanner = new Html5Qrcode("reader");
+        scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (text) => searchByToken(text));
+    } else { alert("Wrong Password!"); }
+}
+
+async function searchByToken(tText = null) {
+    const t = tText || document.getElementById('manualToken').value.toUpperCase();
+    if(!t) return;
+    const res = await db.collection("registrations").where("Token", "==", t).get();
+    const div = document.getElementById('verify-res');
+    if(res.empty) { div.innerHTML = "<h4 class='text-danger'>INVALID TOKEN!</h4>"; return; }
+    const doc = res.docs[0]; const d = doc.data();
+    div.innerHTML = `<div class='p-3 border rounded'><h5>${d.MemberName}</h5><p>Amt: ₹ ${d.Amount}</p><hr>
+    ${d.Status==='DELIVERED'?'<h4 class="text-success">DELIVERED</h4>':`<button class="btn btn-primary w-100" onclick="markDel('${doc.id}')">MARK DELIVERED</button>`}</div>`;
+}
+
+async function markDel(id) {
+    await db.collection("registrations").doc(id).update({Status: "DELIVERED"});
+    alert("Updated!"); searchByToken();
+}
+
 async function downloadFullExcel() {
     const snap = await db.collection("registrations").get();
-    let rows = []; snap.forEach(doc => { const d = doc.data(); rows.push({ Token: d.Token, Name: d.MemberName, Mobile: d.Mobile, Amount: d.Amount, Status: d.Status }); });
-    XLSX.writeFile(XLSX.utils.book_append_sheet(XLSX.utils.book_new(), XLSX.utils.json_to_sheet(rows), "Report"), "Full_Report.xlsx");
+    let rows = []; snap.forEach(d => { const r = d.data(); rows.push({Token: r.Token, Name: r.MemberName, Mobile: r.Mobile, Amount: r.Amount, Status: r.Status}); });
+    XLSX.writeFile(XLSX.utils.book_append_sheet(XLSX.utils.book_new(), XLSX.utils.json_to_sheet(rows), "Report"), "SBJCESL_Data.xlsx");
 }
 
 async function exportFullPDF() {
     const { jsPDF } = window.jspdf; const doc = new jsPDF('l', 'mm', 'a4');
-    doc.text("SHREE BATRISI JAIN - REGISTRATION REPORT", 10, 10);
+    doc.text("SHREE BATRISI JAIN CO-OP EDUCATION SOCIETY LTD", 10, 10);
     const snap = await db.collection("registrations").get();
     let body = []; snap.forEach(d => { const r = d.data(); body.push([r.Token, r.MemberNo, r.MemberName, r.Mobile, r.Students.length, r.Amount, r.Status]); });
     doc.autoTable({ head: [['Token', 'M.No', 'Member Name', 'Mobile', 'Students', 'Fees', 'Status']], body: body, startY: 20 });
     doc.save("SBJCESL_Report.pdf");
 }
-
-function downloadCommExcel() { XLSX.writeFile(XLSX.utils.table_to_book(document.getElementById("commTable")), "Daily_Report.xlsx"); }
 </script>
 </body>
 </html>
