@@ -5,43 +5,43 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SBJCESL - Notebook Management System</title>
     
-    <!-- External Libraries -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     
     <style>
         :root { --primary: #003366; --gold: #ffc107; --bg: #f4f7f9; }
         body { background-color: var(--bg); font-family: 'Segoe UI', Tahoma, sans-serif; }
-        .header { background: var(--primary); color: white; padding: 20px; border-bottom: 5px solid var(--gold); text-align: center; }
-        .header img { height: 85px; margin-bottom: 10px; border-radius: 8px; background: white; padding: 5px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        .header { background: var(--primary); color: white; padding: 25px; border-bottom: 5px solid var(--gold); text-align: center; }
+        /* Logo Fix */
+        .header img { height: 90px; margin-bottom: 10px; background: white; padding: 5px; border-radius: 10px; }
+        
         .card { border-radius: 15px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.1); margin-top: 20px; }
-        .btn-primary { background-color: var(--primary); border: none; }
         .hidden { display: none !important; }
         
-        input[type="text"], input[type="tel"], select, textarea { text-transform: uppercase; font-weight: 500; }
-        input[type="password"], .pass-field { text-transform: none !important; font-family: sans-serif; }
+        input[type="text"], input[type="tel"], select { text-transform: uppercase; font-weight: 500; }
+        
+        #loader { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.98); z-index:10000; display:none; flex-direction:column; align-items:center; justify-content:center; }
+        .progress-box { width: 80%; max-width: 400px; background: #eee; height: 20px; border-radius: 10px; overflow: hidden; margin-top: 15px; border: 1px solid #ccc; }
+        .progress-fill { height: 100%; background: #28a745; width: 0%; transition: width 0.2s; }
         
         .student-entry { background: #fff; border: 1px solid #dee2e6; padding: 20px; border-radius: 12px; margin-bottom: 15px; border-left: 6px solid var(--primary); }
-        #reader { width: 100%; max-width: 400px; margin: auto; border-radius: 10px; overflow: hidden; border: 2px solid var(--primary); }
-        #loader { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.95); z-index:10000; display:none; flex-direction:column; align-items:center; justify-content:center; }
-        .nav-btn { cursor: pointer; padding: 10px 20px; font-weight: bold; border-radius: 8px; transition: 0.3s; color: var(--primary); border: 1px solid transparent; }
+        .nav-btn { cursor: pointer; padding: 10px 20px; font-weight: bold; border-radius: 8px; color: var(--primary); }
         .nav-btn:hover { background: #e9ecef; }
-        .progress-container { width: 80%; max-width: 400px; height: 10px; background: #ddd; border-radius: 5px; margin-top: 15px; overflow: hidden; }
-        .progress-bar { height: 100%; background: var(--primary); width: 0%; transition: 0.3s; }
     </style>
 </head>
 <body onload="checkRememberMe()">
 
 <div id="loader">
     <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;"></div>
-    <p class="mt-3 fw-bold fs-5" id="loader-text">Initializing...</p>
-    <div class="progress-container"><div class="progress-bar" id="load-progress"></div></div>
-    <p class="small text-muted mt-2" id="loader-subtext">Please do not close this window</p>
+    <h4 class="mt-3 fw-bold text-dark" id="loader-text">Processing...</h4>
+    <div class="progress-box"><div class="progress-fill" id="load-progress"></div></div>
+    <p class="mt-2 text-muted" id="loader-count">0 / 0</p>
+    <p class="small text-danger fw-bold">DO NOT REFRESH OR CLOSE THIS PAGE</p>
 </div>
 
 <!-- Header -->
 <div class="header shadow">
-    <img src="logo.png" alt="SBJCESL" onerror="this.src='https://via.placeholder.com/80?text=LOGO'">
+    <img src="logo.png" alt="SBJCESL LOGO" onerror="this.src='https://via.placeholder.com/150x80?text=SBJCESL+LOGO'">
     <h3 class="fw-bold m-0">SHREE BATRISI JAIN CO-OP EDUCATION SOCIETY LTD.</h3>
     <p class="m-0 small opacity-75">Ahmedabad | Notebook Registration & Distribution Portal</p>
 </div>
@@ -57,39 +57,37 @@
 
 <div class="container pb-5">
 
-    <!-- 1. MEMBER LOGIN -->
+    <!-- MEMBER LOGIN -->
     <div id="member-login-sec" class="row justify-content-center section">
         <div class="col-md-5">
-            <div class="card p-4 border-top border-4 border-primary shadow">
-                <h4 class="text-center mb-4 fw-bold">Member Notebook Registration</h4>
+            <div class="card p-4 border-top border-4 border-primary">
+                <h4 class="text-center mb-4 fw-bold">Member Login</h4>
                 <div class="mb-3">
-                    <label class="form-label fw-bold small text-muted">REGISTERED MOBILE NUMBER</label>
+                    <label class="small fw-bold text-muted">REGISTERED MOBILE NUMBER</label>
                     <input type="tel" id="memMobile" class="form-control form-control-lg text-center" maxlength="10" placeholder="9XXXXXXXXX">
                 </div>
-                <button class="btn btn-primary btn-lg w-100 fw-bold shadow-sm" onclick="doMemberLogin()">VERIFY & PROCEED</button>
+                <button class="btn btn-primary btn-lg w-100 fw-bold" onclick="doMemberLogin()">VERIFY & PROCEED</button>
             </div>
         </div>
     </div>
 
-    <!-- 2. MEMBER REGISTRATION FORM -->
+    <!-- REGISTRATION FORM -->
     <div id="reg-form-sec" class="row justify-content-center section hidden">
         <div class="col-md-11">
             <div class="card p-4 shadow">
                 <h4 class="border-bottom pb-2 mb-3 fw-bold text-primary">Student Details Form</h4>
-                <div class="row g-3 p-3 bg-light rounded mb-4 border shadow-sm">
+                <div class="row g-3 p-3 bg-light rounded mb-4 border">
                     <div class="col-md-2"><label class="small fw-bold">MEMBER NO:</label><input type="text" id="dispMNo" class="form-control bg-white" readonly></div>
                     <div class="col-md-5"><label class="small fw-bold">FULL NAME:</label><input type="text" id="dispMName" class="form-control bg-white" readonly></div>
                     <div class="col-md-2"><label class="small fw-bold">NATIVE:</label><input type="text" id="dispNative" class="form-control bg-white" readonly></div>
                     <div class="col-md-3">
                         <label class="small fw-bold">OTHER MEMBER IN HOME?</label>
-                        <select id="otherMember" class="form-select border-primary">
-                            <option value="NO">NO</option><option value="YES">YES</option>
-                        </select>
+                        <select id="otherMember" class="form-select border-primary"><option value="NO">NO</option><option value="YES">YES</option></select>
                     </div>
-                    <div class="col-md-8"><label class="small fw-bold">FULL ADDRESS:</label><input type="text" id="dispAddr" class="form-control bg-white" readonly></div>
+                    <div class="col-md-8"><label class="small fw-bold">ADDRESS:</label><input type="text" id="dispAddr" class="form-control bg-white" readonly></div>
                     <div class="col-md-4">
                         <label class="small fw-bold text-danger">NO. OF STUDENTS (MAX 5):</label>
-                        <select id="selCount" class="form-select border-danger fw-bold shadow-sm" onchange="createStudentForm()">
+                        <select id="selCount" class="form-select border-danger fw-bold" onchange="createStudentForm()">
                             <option value="">SELECT</option>
                             <option value="1">1 STUDENT (₹80)</option><option value="2">2 STUDENTS (₹160)</option>
                             <option value="3">3 STUDENTS (₹240)</option><option value="4">4 STUDENTS (₹320)</option>
@@ -98,64 +96,19 @@
                     </div>
                 </div>
                 <div id="student-list"></div>
-                <div class="text-end mt-3"><h3 class="text-danger fw-bold">TOTAL PAYABLE: ₹ <span id="totalAmt">0</span></h3></div>
-                <button class="btn btn-success btn-lg w-100 mt-3 py-3 fw-bold shadow-lg" onclick="finalSubmit()">CONFIRM & SUBMIT REGISTRATION</button>
+                <div class="text-end mt-3"><h3 class="text-danger fw-bold">TOTAL: ₹ <span id="totalAmt">0</span></h3></div>
+                <button class="btn btn-success btn-lg w-100 mt-3 fw-bold" onclick="finalSubmit()">CONFIRM REGISTRATION</button>
             </div>
         </div>
     </div>
 
-    <!-- 3. COMMITTEE LOGIN -->
-    <div id="comm-login-sec" class="row justify-content-center section hidden">
-        <div class="col-md-4">
-            <div class="card p-4 border-top border-4 border-dark shadow">
-                <h4 class="text-center mb-4">Committee Login</h4>
-                <div class="mb-3">
-                    <label class="small fw-bold">Mobile</label>
-                    <input type="tel" id="commMob" class="form-control" placeholder="Mobile">
-                </div>
-                <div class="mb-3">
-                    <label class="small fw-bold">Password</label>
-                    <input type="password" id="commPass" class="form-control pass-field" placeholder="Password">
-                </div>
-                <button class="btn btn-dark w-100 fw-bold" onclick="doCommitteeLogin()">LOGIN COMMITTEE</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="comm-dash-sec" class="row section hidden">
-        <div class="col-md-12">
-            <div class="card p-4 shadow">
-                <div class="d-flex justify-content-between border-bottom pb-2 mb-3">
-                    <h5 class="fw-bold">Distribution Control</h5>
-                    <button class="btn btn-outline-danger btn-sm" onclick="location.reload()">LOGOUT</button>
-                </div>
-                <div class="row">
-                    <div class="col-md-5 border-end text-center">
-                        <div id="reader" class="mb-3 shadow-sm"></div>
-                        <input type="text" id="manualToken" class="form-control mb-2" placeholder="Manual Token Entry">
-                        <button class="btn btn-primary w-100" onclick="searchByToken()">SEARCH</button>
-                    </div>
-                    <div class="col-md-7 ps-4" id="verify-res">
-                        <p class="text-muted text-center mt-5">Scan QR to verify collection details.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 4. ADMIN PANEL -->
+    <!-- ADMIN PANEL -->
     <div id="admin-login-sec" class="row justify-content-center section hidden">
         <div class="col-md-4">
-            <div class="card p-4 border-top border-4 border-danger shadow">
-                <h4 class="text-center mb-4 text-danger fw-bold">Admin Panel</h4>
-                <div class="mb-3">
-                    <label class="small fw-bold">Admin ID</label>
-                    <input type="text" id="admID" class="form-control" placeholder="BATRISI">
-                </div>
-                <div class="mb-3">
-                    <label class="small fw-bold">Password</label>
-                    <input type="password" id="admPass" class="form-control pass-field" placeholder="Password">
-                </div>
+            <div class="card p-4 border-top border-4 border-danger">
+                <h4 class="text-center mb-4 text-danger fw-bold">Admin Master Access</h4>
+                <input type="text" id="admID" class="form-control mb-2" placeholder="Admin ID">
+                <input type="password" id="admPass" class="form-control mb-3" placeholder="Password">
                 <button class="btn btn-danger w-100 fw-bold" onclick="doAdminLogin()">LOGIN ADMIN</button>
             </div>
         </div>
@@ -164,51 +117,52 @@
     <div id="admin-dash-sec" class="row section hidden">
         <div class="col-md-12">
             <div class="card p-4 shadow">
-                <div class="d-flex justify-content-between border-bottom pb-2 mb-3">
-                    <h4 class="text-danger fw-bold">Master Management</h4>
+                <div class="d-flex justify-content-between border-bottom pb-3">
+                    <h4 class="text-danger fw-bold">System Management</h4>
                     <button class="btn btn-outline-danger btn-sm" onclick="location.reload()">LOGOUT</button>
                 </div>
-                <div class="row g-4">
+                <div class="row g-4 mt-2">
                     <div class="col-md-6 border-end">
-                        <div class="p-3 bg-light rounded border border-primary shadow-sm">
-                            <h6 class="fw-bold text-primary">UPLOAD MASTER CSV (FAST)</h6>
-                            <p class="x-small text-muted mb-2">MemberNo, Name, Native, Mobile, Address</p>
-                            <input type="file" id="masterCSV" class="form-control mb-2" accept=".csv">
-                            <button class="btn btn-primary w-100 fw-bold" onclick="uploadMasterData()">START FAST UPLOAD</button>
+                        <div class="p-3 bg-light border rounded shadow-sm">
+                            <h6 class="fw-bold text-primary">STEP 1: UPLOAD 5000+ MEMBERS (CSV)</h6>
+                            <p class="x-small text-muted">Format: MemberNo, Name, Native, Mobile, Address</p>
+                            <input type="file" id="masterCSV" class="form-control mb-3" accept=".csv">
+                            <button class="btn btn-primary w-100 fw-bold py-2" onclick="uploadMasterFast()">🚀 START ULTRA-FAST UPLOAD</button>
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <div class="p-3 bg-light rounded border border-warning shadow-sm">
-                            <h6>UPDATE MEMBER MOBILE</h6>
+                        <div class="p-3 bg-light border rounded shadow-sm">
+                            <h6 class="fw-bold">STEP 2: UPDATE MEMBER MOBILE</h6>
                             <div class="input-group mb-2">
                                 <input type="text" id="searchMNo" class="form-control" placeholder="Member No">
                                 <button class="btn btn-dark" onclick="searchMemberToUpdate()">FIND</button>
                             </div>
                             <div id="update-box" class="hidden">
-                                <p class="small mb-1">Name: <b id="upNameDisp"></b></p>
+                                <p class="small">Member: <b id="upNameDisp"></b></p>
                                 <input type="tel" id="newMobInput" class="form-control mb-2" placeholder="New Mobile">
-                                <button class="btn btn-warning btn-sm w-100" onclick="updateMobileFinal()">SAVE MOBILE</button>
+                                <button class="btn btn-warning btn-sm w-100 fw-bold" onclick="updateMobileFinal()">SAVE CHANGES</button>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="mt-4 text-center">
-                    <button class="btn btn-success mx-1" onclick="downloadFullExcel()">EXPORT EXCEL</button>
-                    <button class="btn btn-danger mx-1" onclick="exportFullPDF()">EXPORT PDF</button>
+                <div class="text-center mt-4 pt-3 border-top">
+                    <button class="btn btn-success mx-2" onclick="downloadFullExcel()"><i class="bi bi-file-earmark-excel"></i> EXCEL REPORT</button>
+                    <button class="btn btn-danger mx-2" onclick="exportFullPDF()"><i class="bi bi-file-pdf"></i> PDF REPORT</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- 5. SUCCESS SCREEN -->
+    <!-- SUCCESS SCREEN -->
     <div id="success-sec" class="row justify-content-center section hidden">
         <div class="col-md-6 text-center">
             <div class="card p-5 border-success shadow-lg">
-                <h2 class="text-success fw-bold">REGISTRATION SUCCESS!</h2>
+                <h2 class="text-success fw-bold">SUCCESSFUL!</h2>
                 <div id="qrcode" class="d-flex justify-content-center my-4"></div>
                 <h3 id="resToken" class="fw-bold"></h3>
                 <h4 id="resAmt" class="text-primary"></h4>
-                <button class="btn btn-primary btn-lg px-5 mt-3" onclick="location.reload()">FINISH</button>
+                <p class="text-muted">Registration completed for your mobile number.</p>
+                <button class="btn btn-primary btn-lg mt-3" onclick="location.reload()">OK, FINISH</button>
             </div>
         </div>
     </div>
@@ -226,7 +180,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
 
 <script>
-// --- FIREBASE ---
 const firebaseConfig = {
     apiKey: "AIzaSyDbZ4T8264CDQ5LSoH_4L0luB5VKQbiqkU",
     authDomain: "batrisi-latest-app.firebaseapp.com",
@@ -239,11 +192,10 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const storage = firebase.storage();
 
-// --- UI UTILS ---
-function setLoader(show, msg = "", progress = 0) {
-    const l = document.getElementById('loader');
-    l.style.display = show ? 'flex' : 'none';
+function setLoader(show, msg = "", countText = "", progress = 0) {
+    document.getElementById('loader').style.display = show ? 'flex' : 'none';
     document.getElementById('loader-text').innerText = msg;
+    document.getElementById('loader-count').innerText = countText;
     document.getElementById('load-progress').style.width = progress + '%';
 }
 
@@ -252,89 +204,66 @@ function showSection(id) {
     document.getElementById(id).classList.remove('hidden');
 }
 
-function checkRememberMe() {
-    if(localStorage.getItem('admID')) {
-        document.getElementById('admID').value = localStorage.getItem('admID');
-        document.getElementById('admPass').value = localStorage.getItem('admPass');
-    }
-}
-
-// --- ADMIN: FAST CSV UPLOAD ---
-async function uploadMasterData() {
+// --- ULTRA FAST CSV UPLOAD LOGIC ---
+async function uploadMasterFast() {
     const fileInput = document.getElementById('masterCSV');
-    const file = fileInput.files[0];
-    if(!file) return alert("Please select CSV file first!");
+    if(!fileInput.files[0]) return alert("Please select a CSV file!");
 
     const reader = new FileReader();
-    reader.readAsText(file);
+    reader.readAsText(fileInput.files[0]);
     reader.onload = async function(e) {
-        const text = e.target.result;
-        const lines = text.split(/\r?\n/).filter(line => line.trim() !== "").slice(1);
-        const totalLines = lines.length;
-        
-        if(totalLines === 0) return alert("CSV file is empty!");
-        
-        setLoader(true, "Starting Upload of " + totalLines + " records...", 0);
+        const lines = e.target.result.split(/\r?\n/).filter(l => l.trim() !== "").slice(1);
+        const total = lines.length;
+        setLoader(true, "Preparing Data...", "0 / " + total, 0);
 
-        let count = 0;
         let batch = db.batch();
-        let batchCount = 0;
+        let batchSize = 0;
+        let successCount = 0;
 
-        try {
-            for(let i = 0; i < totalLines; i++) {
-                const line = lines[i];
-                // Regex to handle commas inside quotes in CSV
-                const d = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g);
+        for (let i = 0; i < total; i++) {
+            const line = lines[i];
+            const d = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g);
+            
+            if (d && d.length >= 4) {
+                const mno = d[0].replace(/"/g, "").trim();
+                const docRef = db.collection("members").doc(mno);
                 
-                if(d && d.length >= 4) {
-                    const mno = d[0].replace(/"/g, "").trim();
-                    const docRef = db.collection("members").doc(mno);
-                    
-                    batch.set(docRef, {
-                        MemberNo: mno,
-                        Name: d[1].replace(/"/g, "").trim().toUpperCase(),
-                        Native: d[2].replace(/"/g, "").trim().toUpperCase(),
-                        Mobile: d[3].replace(/"/g, "").trim(),
-                        Address: d.slice(4).join(", ").replace(/"/g, "").trim().toUpperCase()
-                    });
-                    
-                    count++;
-                    batchCount++;
-                }
-
-                // Firestore batch limit is 500. We commit at 400 for safety.
-                if(batchCount >= 400) {
-                    await batch.commit();
-                    batch = db.batch();
-                    batchCount = 0;
-                    let progress = Math.round((i / totalLines) * 100);
-                    setLoader(true, "Uploading: " + i + " / " + totalLines, progress);
-                }
+                batch.set(docRef, {
+                    MemberNo: mno,
+                    Name: d[1].replace(/"/g, "").trim().toUpperCase(),
+                    Native: d[2].replace(/"/g, "").trim().toUpperCase(),
+                    Mobile: d[3].replace(/"/g, "").trim(),
+                    Address: d.slice(4).join(", ").replace(/"/g, "").trim().toUpperCase()
+                });
+                
+                batchSize++;
+                successCount++;
             }
 
-            // Commit remaining
-            if(batchCount > 0) {
+            // Har 450 records ke baad commit karein (Firestore limit 500 hai)
+            if (batchSize >= 450 || i === total - 1) {
                 await batch.commit();
+                batch = db.batch(); // Naya batch start karein
+                batchSize = 0;
+                
+                // UI update and Small delay to prevent browser locking
+                let prog = Math.round((i / total) * 100);
+                setLoader(true, "Uploading to Firebase...", successCount + " / " + total, prog);
+                await new Promise(resolve => setTimeout(resolve, 100)); // 0.1 sec break
             }
-
-            setLoader(false);
-            alert("SUCCESS! " + count + " Members updated in database.");
-        } catch (err) {
-            console.error(err);
-            setLoader(false);
-            alert("Error during upload. Please check your internet or CSV format.");
         }
+
+        setLoader(false);
+        alert("SUCCESS! " + successCount + " Member records updated successfully.");
     };
 }
 
-// --- MEMBER LOGIN & REGISTRATION ---
+// --- MEMBER PROCESS ---
 async function doMemberLogin() {
     const mob = document.getElementById('memMobile').value.trim();
-    if(mob.length < 10) return alert("Enter valid mobile number!");
-    
-    setLoader(true, "Verifying Mobile...");
-    
-    // Check if already registered
+    if(mob.length < 10) return alert("Enter 10 digit mobile number");
+    setLoader(true, "Searching Mobile...");
+
     const regCheck = await db.collection("registrations").where("Mobile", "==", mob).get();
     if(!regCheck.empty) {
         const d = regCheck.docs[0].data();
@@ -342,12 +271,9 @@ async function doMemberLogin() {
         setLoader(false); return;
     }
 
-    // Search in Master
     const memSnap = await db.collection("members").where("Mobile", "==", mob).get();
     if(memSnap.empty) {
-        setLoader(false);
-        alert("Mobile Number Not Registered. Please contact office: 9586423232");
-        return;
+        setLoader(false); alert("Mobile not registered. Contact Office."); return;
     }
 
     const m = memSnap.docs[0].data();
@@ -355,9 +281,7 @@ async function doMemberLogin() {
     document.getElementById('dispMName').value = m.Name;
     document.getElementById('dispNative').value = m.Native;
     document.getElementById('dispAddr').value = m.Address;
-    
-    setLoader(false);
-    showSection('reg-form-sec');
+    setLoader(false); showSection('reg-form-sec');
 }
 
 function createStudentForm() {
@@ -367,15 +291,14 @@ function createStudentForm() {
     list.innerHTML = "";
     for(let i=1; i<=c; i++) {
         list.innerHTML += `
-        <div class="student-entry shadow-sm">
-            <h6 class="fw-bold text-primary">STUDENT ${i} DETAILS</h6>
+        <div class="student-entry">
+            <h6 class="fw-bold">STUDENT ${i}</h6>
             <div class="row g-2">
                 <div class="col-md-4"><input type="text" placeholder="NAME" class="form-control s-name"></div>
-                <div class="col-md-4"><input type="text" placeholder="FATHER" class="form-control s-father"></div>
                 <div class="col-md-4"><input type="text" placeholder="SURNAME" class="form-control s-surname"></div>
-                <div class="col-md-3"><input type="text" placeholder="STD" class="form-control s-std"></div>
-                <div class="col-md-5"><input type="text" placeholder="SCHOOL/COLLEGE NAME" class="form-control s-school"></div>
-                <div class="col-md-4"><label class="small fw-bold">MARKSHEET:</label><input type="file" class="form-control s-file"></div>
+                <div class="col-md-4"><input type="text" placeholder="STD" class="form-control s-std"></div>
+                <div class="col-md-6"><input type="text" placeholder="SCHOOL NAME" class="form-control s-school"></div>
+                <div class="col-md-6"><input type="file" class="form-control s-file"></div>
             </div>
         </div>`;
     }
@@ -384,49 +307,42 @@ function createStudentForm() {
 async function finalSubmit() {
     const entries = document.querySelectorAll('.student-entry');
     const uploadPromises = [];
-    
-    setLoader(true, "Uploading Documents Fast...", 20);
+    setLoader(true, "Uploading Marksheets...", "0%", 10);
+
     try {
         for(let entry of entries) {
             const file = entry.querySelector('.s-file').files[0];
-            const name = entry.querySelector('.s-name').value;
-            if(!file || !name) throw new Error("Please complete all student details and marksheets!");
+            if(!file) throw new Error("Please upload marksheets for all students.");
             
-            const storageRef = storage.ref(`docs/${Date.now()}_${file.name}`);
-            const uploadTask = storageRef.put(file).then(async (snap) => {
+            const ref = storage.ref(`docs/${Date.now()}_${file.name}`);
+            const task = ref.put(file).then(async snap => {
                 return {
-                    Name: name.toUpperCase(),
-                    Std: entry.querySelector('.s-std').value.toUpperCase(),
-                    School: entry.querySelector('.s-school').value.toUpperCase(),
+                    Name: entry.querySelector('.s-name').value.toUpperCase(),
                     File: await snap.ref.getDownloadURL()
                 };
             });
-            uploadPromises.push(uploadTask);
+            uploadPromises.push(task);
         }
 
         const studentData = await Promise.all(uploadPromises);
         const token = "BT" + Math.floor(1000 + Math.random() * 9000);
-        const amount = studentData.length * 80;
-
         await db.collection("registrations").add({
-            Token: token, Amount: amount, Mobile: document.getElementById('memMobile').value.trim(),
+            Token: token, Amount: studentData.length * 80, Mobile: document.getElementById('memMobile').value,
             MemberName: document.getElementById('dispMName').value, MemberNo: document.getElementById('dispMNo').value,
             Students: studentData, Status: "PENDING", Date: new Date().toLocaleDateString()
         });
-
-        showSuccess(token, amount);
+        showSuccess(token, studentData.length * 80);
     } catch(e) { alert(e.message); }
     setLoader(false);
 }
 
-// --- REMAINING FUNCTIONS (ADMIN, COMM, EXPORTS) ---
+// --- OTHER ADMIN FUNCTIONS ---
 function doAdminLogin() {
     const id = document.getElementById('admID').value.trim().toUpperCase();
     const pass = document.getElementById('admPass').value;
     if(id === "BATRISI" && pass === "Bat@3232") {
-        localStorage.setItem('admID', id); localStorage.setItem('admPass', pass);
         showSection('admin-dash-sec');
-    } else { alert("Invalid Credentials!"); }
+    } else { alert("Wrong Credentials"); }
 }
 
 async function searchMemberToUpdate() {
@@ -436,14 +352,14 @@ async function searchMemberToUpdate() {
         document.getElementById('update-box').classList.remove('hidden');
         document.getElementById('upNameDisp').innerText = doc.data().Name;
         document.getElementById('newMobInput').value = doc.data().Mobile;
-    } else { alert("Member Not Found!"); }
+    } else { alert("Not Found"); }
 }
 
 async function updateMobileFinal() {
     const mno = document.getElementById('searchMNo').value.trim();
     const newMob = document.getElementById('newMobInput').value.trim();
     await db.collection("members").doc(mno).update({ Mobile: newMob });
-    alert("Mobile Updated!");
+    alert("Updated!");
 }
 
 function showSuccess(t, a) {
@@ -454,45 +370,11 @@ function showSuccess(t, a) {
     new QRCode(document.getElementById("qrcode"), { text: t, width: 160, height: 160 });
 }
 
-// Committee
-function doCommitteeLogin() {
-    const pass = document.getElementById('commPass').value;
-    if(pass === "Bat@3232") {
-        showSection('comm-dash-sec');
-        const scanner = new Html5Qrcode("reader");
-        scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (text) => searchByToken(text));
-    } else { alert("Wrong Password!"); }
-}
-
-async function searchByToken(tText = null) {
-    const t = tText || document.getElementById('manualToken').value.toUpperCase();
-    if(!t) return;
-    const res = await db.collection("registrations").where("Token", "==", t).get();
-    const div = document.getElementById('verify-res');
-    if(res.empty) { div.innerHTML = "<h4 class='text-danger'>INVALID TOKEN!</h4>"; return; }
-    const doc = res.docs[0]; const d = doc.data();
-    div.innerHTML = `<div class='p-3 border rounded'><h5>${d.MemberName}</h5><p>Amt: ₹ ${d.Amount}</p><hr>
-    ${d.Status==='DELIVERED'?'<h4 class="text-success">DELIVERED</h4>':`<button class="btn btn-primary w-100" onclick="markDel('${doc.id}')">MARK DELIVERED</button>`}</div>`;
-}
-
-async function markDel(id) {
-    await db.collection("registrations").doc(id).update({Status: "DELIVERED"});
-    alert("Updated!"); searchByToken();
-}
-
-async function downloadFullExcel() {
-    const snap = await db.collection("registrations").get();
-    let rows = []; snap.forEach(d => { const r = d.data(); rows.push({Token: r.Token, Name: r.MemberName, Mobile: r.Mobile, Amount: r.Amount, Status: r.Status}); });
-    XLSX.writeFile(XLSX.utils.book_append_sheet(XLSX.utils.book_new(), XLSX.utils.json_to_sheet(rows), "Report"), "SBJCESL_Data.xlsx");
-}
-
-async function exportFullPDF() {
-    const { jsPDF } = window.jspdf; const doc = new jsPDF('l', 'mm', 'a4');
-    doc.text("SHREE BATRISI JAIN CO-OP EDUCATION SOCIETY LTD", 10, 10);
-    const snap = await db.collection("registrations").get();
-    let body = []; snap.forEach(d => { const r = d.data(); body.push([r.Token, r.MemberNo, r.MemberName, r.Mobile, r.Students.length, r.Amount, r.Status]); });
-    doc.autoTable({ head: [['Token', 'M.No', 'Member Name', 'Mobile', 'Students', 'Fees', 'Status']], body: body, startY: 20 });
-    doc.save("SBJCESL_Report.pdf");
+function checkRememberMe() {
+    if(localStorage.getItem('admID')) {
+        document.getElementById('admID').value = localStorage.getItem('admID');
+        document.getElementById('admPass').value = localStorage.getItem('admPass');
+    }
 }
 </script>
 </body>
