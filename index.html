@@ -12,14 +12,14 @@
     <style>
         :root { --primary: #003366; --gold: #ffc107; --bg: #f4f7f9; }
         body { background-color: var(--bg); font-family: 'Segoe UI', Tahoma, sans-serif; }
-        .header { background: var(--primary); color: white; padding: 25px; border-bottom: 5px solid var(--gold); text-align: center; }
+        .header { background: var(--primary); color: white; padding: 20px; border-bottom: 5px solid var(--gold); text-align: center; }
+        .header img { height: 80px; margin-bottom: 10px; border-radius: 10px; background: white; padding: 5px; }
         .card { border-radius: 15px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.1); margin-top: 20px; }
         .btn-primary { background-color: var(--primary); border: none; }
         .hidden { display: none !important; }
         
-        /* Auto Capitalization for Data fields */
+        /* Auto Capitalization */
         input[type="text"], input[type="tel"], select, textarea { text-transform: uppercase; font-weight: 500; }
-        /* Strict Case-Sensitive for Passwords */
         input[type="password"], .pass-field { text-transform: none !important; font-family: sans-serif; }
         
         .student-entry { background: #fff; border: 1px solid #dee2e6; padding: 20px; border-radius: 12px; margin-bottom: 15px; border-left: 6px solid var(--primary); }
@@ -39,6 +39,8 @@
 
 <!-- Header -->
 <div class="header shadow">
+    <!-- Logo display fix -->
+    <img src="logo.png" alt="SBJCESL LOGO" onerror="this.src='https://via.placeholder.com/80?text=LOGO'">
     <h3 class="fw-bold m-0">SHREE BATRISI JAIN CO-OP EDUCATION SOCIETY LTD.</h3>
     <p class="m-0 small opacity-75">Ahmedabad | Notebook Registration & Distribution Portal</p>
     <small>Office: 9586423232 | GSTIN: 24AAATS6070J1ZE</small>
@@ -270,7 +272,7 @@ const db = firebase.firestore();
 const storage = firebase.storage();
 let activeCommUser = "";
 
-// --- CORE SYSTEM UTILS ---
+// --- UTILS ---
 function togglePassword(id) {
     const p = document.getElementById(id); p.type = p.type === "password" ? "text" : "password";
 }
@@ -293,14 +295,14 @@ function setLoader(v, msg="Processing...") {
     document.getElementById('loader').style.display = v ? 'flex' : 'none';
 }
 
-// --- ADMIN / FAST CSV UPLOAD ---
+// --- ADMIN PANEL LOGIC ---
 function doAdminLogin() {
     const id = document.getElementById('admID').value.trim().toUpperCase();
     const pass = document.getElementById('admPass').value;
     if(id === "BATRISI" && pass === "Bat@3232") {
         if(document.getElementById('admRemember').checked) {
             localStorage.setItem('admID', id); localStorage.setItem('admPass', pass);
-        } else { localStorage.removeItem('admID'); localStorage.removeItem('admPass'); }
+        }
         showSection('admin-dash-sec');
     } else { alert("Error: Invalid Credentials!"); }
 }
@@ -317,16 +319,16 @@ async function uploadMasterData() {
         const lines = text.split(/\r?\n/).slice(1);
         let batch = db.batch();
         let count = 0;
+        let totalProcessed = 0;
 
         for(let line of lines) {
             if(!line.trim()) continue;
-            // Smart CSV parser handling commas in Address/Name
             const d = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g);
             if(d && d.length >= 4) {
                 const mno = d[0].replace(/"/g, "").trim();
                 const docRef = db.collection("members").doc(mno);
                 
-                // .set overwrites old data automatically (Fastest Cleanup)
+                // Fast Set (Overwrites if exists)
                 batch.set(docRef, {
                     MemberNo: mno,
                     Name: d[1].replace(/"/g, "").trim().toUpperCase(),
@@ -335,16 +337,18 @@ async function uploadMasterData() {
                     Address: d.slice(4).join(", ").replace(/"/g, "").trim().toUpperCase()
                 });
                 count++;
-                if(count === 480) { // Committing near 500 limit
+                if(count === 480) { 
                     await batch.commit();
                     batch = db.batch();
+                    totalProcessed += count;
                     count = 0;
                 }
             }
         }
         await batch.commit();
+        totalProcessed += count;
         setLoader(false); 
-        alert("Success: " + count + " Master Data Uploaded and Replaced!");
+        alert("Success: " + totalProcessed + " Master Records Uploaded & Replaced!");
     };
     reader.readAsText(file);
 }
@@ -364,16 +368,15 @@ async function updateMobileFinal() {
     const newMob = document.getElementById('newMobInput').value.trim();
     if(newMob.length < 10) return alert("Enter 10 Digit Mobile No.");
     await db.collection("members").doc(mno).update({ Mobile: newMob });
-    alert("Mobile Number Updated! Member can login now.");
+    alert("Mobile Number Updated!");
 }
 
-// --- MEMBER REGISTRATION PROCESS ---
+// --- MEMBER REGISTRATION ---
 async function doMemberLogin() {
     const mob = document.getElementById('memMobile').value.trim();
-    if(mob.length < 10) return alert("Please enter valid 10 digit mobile number");
+    if(mob.length < 10) return alert("Invalid Mobile Number");
     setLoader(true, "Verifying Identity...");
 
-    // Check if already registered
     const regCheck = await db.collection("registrations").where("Mobile", "==", mob).get();
     if(!regCheck.empty) {
         const d = regCheck.docs[0].data();
@@ -381,12 +384,9 @@ async function doMemberLogin() {
         setLoader(false); return;
     }
 
-    // Find in Members Master
     const memSnap = await db.collection("members").where("Mobile", "==", mob).get();
     if(memSnap.empty) {
-        setLoader(false);
-        alert("Mobile Number Not registered Please Contact To office: 9586423232");
-        return;
+        setLoader(false); alert("Mobile Number not found! Contact Office."); return;
     }
 
     const m = memSnap.docs[0].data();
@@ -412,8 +412,8 @@ function createStudentForm() {
                 <div class="col-md-4"><input type="text" placeholder="FATHER" class="form-control s-father"></div>
                 <div class="col-md-4"><input type="text" placeholder="SURNAME" class="form-control s-surname"></div>
                 <div class="col-md-3"><input type="text" placeholder="STD" class="form-control s-std"></div>
-                <div class="col-md-5"><input type="text" placeholder="SCHOOL/COLLEGE NAME" class="form-control s-school"></div>
-                <div class="col-md-4"><label class="small fw-bold">MARKSHEET (JPEG/PDF):</label><input type="file" class="form-control s-file"></div>
+                <div class="col-md-5"><input type="text" placeholder="SCHOOL/COLLEGE" class="form-control s-school"></div>
+                <div class="col-md-4"><label class="small fw-bold">MARKSHEET:</label><input type="file" class="form-control s-file"></div>
             </div>
         </div>`;
     }
@@ -421,26 +421,35 @@ function createStudentForm() {
 
 async function finalSubmit() {
     const entries = document.querySelectorAll('.student-entry');
-    const students = [];
-    setLoader(true, "Uploading Documents...");
+    const uploadPromises = [];
+    setLoader(true, "Uploading All Marksheets Fast...");
+
     try {
         for(let entry of entries) {
             const file = entry.querySelector('.s-file').files[0];
             const name = entry.querySelector('.s-name').value;
-            if(!file || !name) throw new Error("Complete student details and upload marksheets!");
-            const ref = storage.ref(`docs/${Date.now()}_${file.name}`);
-            await ref.put(file);
-            students.push({
-                Name: name.toUpperCase(), Std: entry.querySelector('.s-std').value.toUpperCase(),
-                School: entry.querySelector('.s-school').value.toUpperCase(), File: await ref.getDownloadURL()
+            if(!file || !name) throw new Error("Please complete all student details!");
+            
+            const storageRef = storage.ref(`docs/${Date.now()}_${file.name}`);
+            const uploadTask = storageRef.put(file).then(async (snap) => {
+                return {
+                    Name: name.toUpperCase(),
+                    Std: entry.querySelector('.s-std').value.toUpperCase(),
+                    School: entry.querySelector('.s-school').value.toUpperCase(),
+                    File: await snap.ref.getDownloadURL()
+                };
             });
+            uploadPromises.push(uploadTask);
         }
+
+        const studentData = await Promise.all(uploadPromises);
         const token = "BT" + Math.floor(1000 + Math.random() * 9000);
-        const amount = students.length * 80;
+        const amount = studentData.length * 80;
+
         await db.collection("registrations").add({
             Token: token, Amount: amount, Mobile: document.getElementById('memMobile').value.trim(),
             MemberName: document.getElementById('dispMName').value, MemberNo: document.getElementById('dispMNo').value,
-            Students: students, Status: "PENDING", Date: new Date().toLocaleDateString()
+            Students: studentData, Status: "PENDING", Date: new Date().toLocaleDateString()
         });
         showSuccess(token, amount);
     } catch(e) { alert(e.message); }
@@ -457,7 +466,7 @@ function doCommitteeLogin() {
         const scanner = new Html5Qrcode("reader");
         scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (text) => searchByToken(text));
         loadCommTable();
-    } else { alert("Invalid Committee Credentials!"); }
+    } else { alert("Invalid Credentials!"); }
 }
 
 async function searchByToken(tokenText = null) {
@@ -465,16 +474,16 @@ async function searchByToken(tokenText = null) {
     if(!t) return;
     const res = await db.collection("registrations").where("Token", "==", t).get();
     const div = document.getElementById('verify-res');
-    if(res.empty) { div.innerHTML = "<h4 class='text-danger text-center'>TOKEN NOT FOUND!</h4>"; return; }
+    if(res.empty) { div.innerHTML = "<h4 class='text-danger'>NOT FOUND!</h4>"; return; }
     
     const doc = res.docs[0]; const d = doc.data();
     div.innerHTML = `
         <div class="p-2">
             <h5><b>Name:</b> ${d.MemberName} (${d.MemberNo})</h5>
-            <p><b>Mobile:</b> ${d.Mobile} | <b>Students:</b> ${d.Students.length}</p>
-            <h3 class="text-success fw-bold">COLLECT FEES: ₹ ${d.Amount}</h3>
+            <p><b>Students:</b> ${d.Students.length} | <b>Amount:</b> ₹ ${d.Amount}</p>
             <hr>
-            ${d.Status === "DELIVERED" ? `<h4 class="text-danger text-center">ALREADY DELIVERED</h4>` : `<button class="btn btn-primary btn-lg w-100 fw-bold" onclick="markDelivered('${doc.id}')">MARK AS DELIVERED</button>`}
+            ${d.Status === "DELIVERED" ? `<h4 class="text-danger">ALREADY DELIVERED</h4>` : 
+            `<button class="btn btn-primary w-100" onclick="markDelivered('${doc.id}')">MARK AS DELIVERED</button>`}
         </div>`;
 }
 
@@ -486,10 +495,13 @@ async function markDelivered(id) {
 async function loadCommTable() {
     const snap = await db.collection("registrations").where("VerifiedBy", "==", activeCommUser).get();
     const tb = document.getElementById('commTable'); tb.innerHTML = "";
-    snap.forEach(doc => { const d = doc.data(); tb.innerHTML += `<tr><td>${d.Token}</td><td>${d.MemberName}</td><td>${d.Students.length}</td><td>₹ ${d.Amount}</td><td>${d.Status}</td></tr>`; });
+    snap.forEach(doc => { 
+        const d = doc.data(); 
+        tb.innerHTML += `<tr><td>${d.Token}</td><td>${d.MemberName}</td><td>${d.Students.length}</td><td>₹ ${d.Amount}</td><td>${d.Status}</td></tr>`; 
+    });
 }
 
-// --- EXPORTS & FINAL SUCCESS ---
+// --- EXPORTS & SUCCESS ---
 function showSuccess(t, a) {
     showSection('success-sec');
     document.getElementById('resToken').innerText = "TOKEN: " + t;
@@ -501,16 +513,16 @@ function showSuccess(t, a) {
 async function downloadFullExcel() {
     const snap = await db.collection("registrations").get();
     let rows = []; snap.forEach(doc => { const d = doc.data(); rows.push({ Token: d.Token, Name: d.MemberName, Mobile: d.Mobile, Amount: d.Amount, Status: d.Status }); });
-    XLSX.writeFile(XLSX.utils.book_append_sheet(XLSX.utils.book_new(), XLSX.utils.json_to_sheet(rows), "SystemData"), "SBJCESL_Full_Report.xlsx");
+    XLSX.writeFile(XLSX.utils.book_append_sheet(XLSX.utils.book_new(), XLSX.utils.json_to_sheet(rows), "Report"), "Full_Report.xlsx");
 }
 
 async function exportFullPDF() {
     const { jsPDF } = window.jspdf; const doc = new jsPDF('l', 'mm', 'a4');
-    doc.text("SHREE BATRISI JAIN CO-OP EDUCATION SOCIETY LTD - REGISTRATION REPORT", 10, 10);
+    doc.text("SHREE BATRISI JAIN - REGISTRATION REPORT", 10, 10);
     const snap = await db.collection("registrations").get();
-    let body = []; snap.forEach(d => { const r = d.data(); body.push([r.Token, r.MemberNo, r.MemberName, r.Mobile, r.Students.length, "Rs."+r.Amount, r.Status]); });
+    let body = []; snap.forEach(d => { const r = d.data(); body.push([r.Token, r.MemberNo, r.MemberName, r.Mobile, r.Students.length, r.Amount, r.Status]); });
     doc.autoTable({ head: [['Token', 'M.No', 'Member Name', 'Mobile', 'Students', 'Fees', 'Status']], body: body, startY: 20 });
-    doc.save("SBJCESL_Landscape_PDF.pdf");
+    doc.save("SBJCESL_Report.pdf");
 }
 
 function downloadCommExcel() { XLSX.writeFile(XLSX.utils.table_to_book(document.getElementById("commTable")), "Daily_Report.xlsx"); }
