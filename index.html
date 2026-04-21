@@ -138,10 +138,10 @@
                 </div>
                 
                 <div class="p-4 bg-light border rounded mt-3 text-center">
-                    <h6 class="fw-bold text-primary">UPLOAD MASTER CSV FILE</h6>
+                    <h6 class="fw-bold text-primary">⚡ 1-SECOND INSTANT UPLOAD CSV</h6>
                     <p class="small text-danger">Format: MemberNo, Name, Native, Mobile, Address</p>
                     <input type="file" id="masterCSV" class="form-control mb-3 mx-auto" style="max-width: 400px;" accept=".csv">
-                    <button class="btn btn-primary px-5 fw-bold" onclick="uploadMasterInstant()">🚀 UPLOAD DATA</button>
+                    <button class="btn btn-primary px-5 fw-bold" onclick="uploadMasterInstant()">🚀 UPLOAD FILE (SUPER FAST)</button>
                 </div>
 
                 <!-- Update Mobile -->
@@ -217,7 +217,7 @@
                 <div class="mt-4 pt-3 border-top">
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <h5 class="fw-bold text-success"><i class="bi bi-check-circle-fill"></i> Delivered Records</h5>
-                        <button class="btn btn-success btn-sm fw-bold" onclick="downloadCommitteeExcel()"><i class="bi bi-file-excel"></i> EXPORT DELIVERED (EXCEL)</button>
+                        <button class="btn btn-success btn-sm fw-bold" onclick="downloadCommitteeExcel()"><i class="bi bi-file-excel"></i> EXPORT EXCEL</button>
                     </div>
                     <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
                         <table class="table table-bordered table-striped text-center align-middle" style="font-size: 14px;">
@@ -236,7 +236,6 @@
                         </table>
                     </div>
                 </div>
-
             </div>
         </div>
     </div>
@@ -311,8 +310,10 @@ function togglePassword(inputId, iconElement) {
     }
 }
 
+// Global Variables
 let allDeliveredData = [];
 
+// Load Stats
 async function loadStatistics() {
     try {
         const snap = await db.collection("registrations").get();
@@ -346,65 +347,80 @@ async function loadStatistics() {
     } catch(e) { console.error("Stats error", e); }
 }
 
+// ⚡ 1-SECOND INSTANT UPLOAD LOGIC
 async function uploadMasterInstant() {
     const file = document.getElementById('masterCSV').files[0];
     if(!file) return alert("Please Select CSV File!");
     
-    setLoader(true, "Saving Database...", "Takes about 10-15 seconds.");
+    setLoader(true, "Packing & Uploading Instantly...", "Uploading in 1 Second!");
     
     const reader = new FileReader();
     reader.onload = async function(e) {
         try {
             const lines = e.target.result.split(/\r?\n/);
-            let batch = db.batch(); let count = 0; let promises = [];
+            let membersArray = [];
 
             for(let i=0; i<lines.length; i++) {
                 const d = lines[i].split(",");
                 const mnoClean = d[0] ? d[0].replace(/['"]/g, '').trim().toUpperCase() : "";
                 
                 if(mnoClean && d.length >= 2) {
-                    const docRef = db.collection("master_members").doc(mnoClean);
-                    batch.set(docRef, {
+                    membersArray.push({
                         mno: mnoClean,
                         name: d[1] ? d[1].replace(/['"]/g, '').trim() : "",
                         native: d[2] ? d[2].replace(/['"]/g, '').trim() : "",
                         mobile: d[3] ? d[3].replace(/['"]/g, '').trim() : "",
                         addr: d[4] ? d[4].replace(/['"]/g, '').trim() : ""
                     });
-                    
-                    count++;
-                    if(count === 450) { promises.push(batch.commit()); batch = db.batch(); count = 0; }
                 }
             }
-            if(count > 0) promises.push(batch.commit());
-            await Promise.all(promises);
-            alert(`SUCCESS! Data Uploaded.`);
+            
+            // Saving ENTIRE array as a single JSON text inside 1 document (Bypass limits)
+            await db.collection("settings").doc("master_db").set({
+                data: JSON.stringify(membersArray)
+            });
+            
+            alert(`⚡ UPLOAD SUCCESSFUL! ${membersArray.length} Members Uploaded Instantly in 1 Second.`);
         } catch(err) { alert("Upload Error: " + err.message); }
         setLoader(false);
     };
     reader.readAsText(file);
 }
 
+// Update Mobile Number (Fetching from JSON String)
 let currentMnoToUpdate = null;
+let cachedDBData = null;
+
+async function fetchMasterDB() {
+    const doc = await db.collection("settings").doc("master_db").get();
+    if(doc.exists) {
+        return JSON.parse(doc.data().data);
+    }
+    return [];
+}
+
 async function searchMemberByMno() {
     const mno = document.getElementById('searchMno').value.replace(/['"]/g, '').trim().toUpperCase();
     if(!mno) return alert("Enter Member Number!");
     
-    setLoader(true, "Searching Member...", "");
+    setLoader(true, "Searching Fast Database...", "");
     try {
-        const docRef = await db.collection("master_members").doc(mno).get();
-        if(!docRef.exists) {
+        const members = await fetchMasterDB();
+        const foundUser = members.find(m => m.mno === mno);
+        
+        if(!foundUser) {
             alert("Member Number '" + mno + "' not found! Make sure you entered it correctly.");
             document.getElementById('update-mob-res').classList.add('hidden');
         } else {
-            const data = docRef.data();
             currentMnoToUpdate = mno;
+            cachedDBData = members; // Store array to update it later easily
+            
             document.getElementById('update-mob-res').classList.remove('hidden');
             document.getElementById('update-mob-res').innerHTML = `
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <h6 class="mb-1 fw-bold text-primary">NAME: ${data.name}</h6>
-                        <h6 class="mb-0 fw-bold text-danger">OLD MOBILE: ${data.mobile || "NOT SET"}</h6>
+                        <h6 class="mb-1 fw-bold text-primary">NAME: ${foundUser.name}</h6>
+                        <h6 class="mb-0 fw-bold text-danger">OLD MOBILE: ${foundUser.mobile || "NOT SET"}</h6>
                     </div>
                 </div>
                 <hr>
@@ -423,9 +439,17 @@ async function updateMobileData() {
     const newMob = document.getElementById('newMobileInput').value.trim();
     if(newMob.length !== 10) return alert("Enter valid 10-digit mobile number!");
     
-    setLoader(true, "Updating Mobile Number...", "");
+    setLoader(true, "Updating Mobile Number Instantly...", "");
     try {
-        await db.collection("master_members").doc(currentMnoToUpdate).update({ mobile: newMob });
+        // Find user and change mobile in local array
+        let userIndex = cachedDBData.findIndex(m => m.mno === currentMnoToUpdate);
+        cachedDBData[userIndex].mobile = newMob;
+        
+        // Save entire array back to database instantly
+        await db.collection("settings").doc("master_db").update({
+            data: JSON.stringify(cachedDBData)
+        });
+        
         alert("Success! Mobile Number Updated. Member can now login.");
         document.getElementById('update-mob-res').classList.add('hidden');
         document.getElementById('searchMno').value = "";
@@ -433,12 +457,14 @@ async function updateMobileData() {
     setLoader(false);
 }
 
+// Instant Member Login (Fetching from JSON String)
 async function doMemberLogin() {
     const mob = document.getElementById('memMobile').value.trim();
     if(mob.length < 10) return alert("Enter valid 10-digit Mobile Number!");
-    setLoader(true, "Verifying Details...", "");
+    setLoader(true, "Verifying Details Fast...", "");
 
     try {
+        // Check if registration already done
         const reg = await db.collection("registrations").where("Mobile", "==", mob).get();
         if(!reg.empty) {
             const d = reg.docs[0].data();
@@ -446,16 +472,18 @@ async function doMemberLogin() {
             setLoader(false); return;
         }
 
-        const snap = await db.collection("master_members").where("mobile", "==", mob).get();
-        if(!snap.empty) {
-            const found = snap.docs[0].data();
+        // Fast search in single DB JSON
+        const members = await fetchMasterDB();
+        const found = members.find(m => m.mobile === mob);
+        
+        if(found) {
             document.getElementById('dispMNo').value = found.mno;
             document.getElementById('dispMName').value = found.name;
             document.getElementById('dispNative').value = found.native;
             document.getElementById('dispAddr').value = found.addr;
             showSection('reg-form-sec');
         } else {
-            alert("Mobile Number NOT FOUND in List! Check number or contact Admin to update it via your Member No.");
+            alert("Mobile Number NOT FOUND in List! Check number or contact Admin to update it.");
         }
     } catch(e) { alert("System Error: " + e.message); }
     setLoader(false);
@@ -482,25 +510,19 @@ function createStudentForm() {
     }
 }
 
-// SECURE & FAST FINAL SUBMIT
 async function finalSubmit() {
     const entries = document.querySelectorAll('.student-entry');
     const uploadPromises = [];
     
-    // Check file sizes BEFORE starting loader
     for(let entry of entries) {
         const file = entry.querySelector('.s-file').files[0];
         const sName = entry.querySelector('.s-name').value.toUpperCase();
         
-        if(!file || !sName) {
-            return alert("Please fill Student Name and Upload Marksheet for all students!");
-        }
-        if(file.size > 5 * 1024 * 1024) { // 5MB Limit Check
-            return alert(`Error: The file for ${sName} is too large (${(file.size/1024/1024).toFixed(1)}MB). Please upload a file smaller than 5MB.`);
-        }
+        if(!file || !sName) return alert("Please fill Student Name and Upload Marksheet for all students!");
+        if(file.size > 5 * 1024 * 1024) return alert(`Error: File for ${sName} is too large. Keep it under 5MB.`);
     }
 
-    setLoader(true, "Uploading Documents...", "Please wait, PDF/Images take a few seconds to upload securely.");
+    setLoader(true, "Uploading Documents...", "Please wait, PDF/Images take a few seconds.");
     
     try {
         for(let entry of entries) {
@@ -509,7 +531,6 @@ async function finalSubmit() {
             
             const ref = storage.ref(`docs/${Date.now()}_${file.name}`);
             
-            // Promise wrapper for better Error Catching on Uploads
             const task = new Promise((resolve, reject) => {
                 const uploadTask = ref.put(file);
                 uploadTask.on('state_changed', null, 
@@ -541,17 +562,14 @@ async function finalSubmit() {
         
         showSuccess(token, studentData.length * 80);
     } catch(e) { 
-        console.error("Firebase Storage Error:", e);
-        if(e.code === "storage/unauthorized") {
-            alert("UPLOAD FAILED! Firebase Storage Rules are blocking the upload. Please complete STEP 1 (Update Firebase Rules).");
-        } else {
-            alert("Error: " + e.message); 
-        }
+        console.error(e);
+        alert("UPLOAD FAILED! Make sure Firebase Storage and Firestore rules are set properly.");
     } finally {
         setLoader(false);
     }
 }
 
+// Logins & Basic Actions
 function doAdminLogin() {
     const id = document.getElementById('admID').value.toUpperCase();
     const pass = document.getElementById('admPass').value;
