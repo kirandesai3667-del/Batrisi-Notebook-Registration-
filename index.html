@@ -255,10 +255,9 @@
 
 </div>
 
-<!-- Firebase & Libraries -->
+<!-- Firebase & Libraries (Firebase Storage Removed) -->
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
 <script src="https://unpkg.com/html5-qrcode"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -266,18 +265,18 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
 
 <script>
+// --- IMGBB FREE API KEY --- (Applied Successfully)
+const IMGBB_API_KEY = "4654a367d70c05d4433a54f79d8a600d"; 
+
 // --- FIREBASE SETUP ---
 const firebaseConfig = {
     apiKey: "AIzaSyDbZ4T8264CDQ5LSoH_4L0luB5VKQbiqkU",
     authDomain: "batrisi-latest-app.firebaseapp.com",
     projectId: "batrisi-latest-app",
-    storageBucket: "batrisi-latest-app.firebasestorage.app",
-    messagingSenderId: "175592360155",
     appId: "1:175592360155:web:ba95f9aba4558fda9d64fe"
 };
 if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
 const db = firebase.firestore();
-const storage = firebase.storage();
 
 const committeeMobiles = [
     "9825698298", "9825441916", "9537714100", "9824010710", "9426083001",
@@ -310,10 +309,8 @@ function togglePassword(inputId, iconElement) {
     }
 }
 
-// Global Variables
 let allDeliveredData = [];
 
-// Load Stats
 async function loadStatistics() {
     try {
         const snap = await db.collection("registrations").get();
@@ -347,7 +344,6 @@ async function loadStatistics() {
     } catch(e) { console.error("Stats error", e); }
 }
 
-// ⚡ 1-SECOND INSTANT UPLOAD LOGIC
 async function uploadMasterInstant() {
     const file = document.getElementById('masterCSV').files[0];
     if(!file) return alert("Please Select CSV File!");
@@ -363,7 +359,6 @@ async function uploadMasterInstant() {
             for(let i=0; i<lines.length; i++) {
                 const d = lines[i].split(",");
                 const mnoClean = d[0] ? d[0].replace(/['"]/g, '').trim().toUpperCase() : "";
-                
                 if(mnoClean && d.length >= 2) {
                     membersArray.push({
                         mno: mnoClean,
@@ -374,12 +369,7 @@ async function uploadMasterInstant() {
                     });
                 }
             }
-            
-            // Saving ENTIRE array as a single JSON text inside 1 document (Bypass limits)
-            await db.collection("settings").doc("master_db").set({
-                data: JSON.stringify(membersArray)
-            });
-            
+            await db.collection("settings").doc("master_db").set({ data: JSON.stringify(membersArray) });
             alert(`⚡ UPLOAD SUCCESSFUL! ${membersArray.length} Members Uploaded Instantly in 1 Second.`);
         } catch(err) { alert("Upload Error: " + err.message); }
         setLoader(false);
@@ -387,15 +377,12 @@ async function uploadMasterInstant() {
     reader.readAsText(file);
 }
 
-// Update Mobile Number (Fetching from JSON String)
 let currentMnoToUpdate = null;
 let cachedDBData = null;
 
 async function fetchMasterDB() {
     const doc = await db.collection("settings").doc("master_db").get();
-    if(doc.exists) {
-        return JSON.parse(doc.data().data);
-    }
+    if(doc.exists) return JSON.parse(doc.data().data);
     return [];
 }
 
@@ -412,23 +399,12 @@ async function searchMemberByMno() {
             alert("Member Number '" + mno + "' not found! Make sure you entered it correctly.");
             document.getElementById('update-mob-res').classList.add('hidden');
         } else {
-            currentMnoToUpdate = mno;
-            cachedDBData = members; // Store array to update it later easily
-            
+            currentMnoToUpdate = mno; cachedDBData = members;
             document.getElementById('update-mob-res').classList.remove('hidden');
             document.getElementById('update-mob-res').innerHTML = `
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="mb-1 fw-bold text-primary">NAME: ${foundUser.name}</h6>
-                        <h6 class="mb-0 fw-bold text-danger">OLD MOBILE: ${foundUser.mobile || "NOT SET"}</h6>
-                    </div>
-                </div>
-                <hr>
+                <div class="d-flex justify-content-between align-items-center"><div><h6 class="mb-1 fw-bold text-primary">NAME: ${foundUser.name}</h6><h6 class="mb-0 fw-bold text-danger">OLD MOBILE: ${foundUser.mobile || "NOT SET"}</h6></div></div><hr>
                 <label class="small fw-bold text-muted">NEW MOBILE NUMBER</label>
-                <div class="input-group mt-1">
-                    <input type="tel" id="newMobileInput" class="form-control fw-bold" maxlength="10" placeholder="Enter New 10-Digit Mobile">
-                    <button class="btn btn-success fw-bold px-4" onclick="updateMobileData()">UPDATE NUMBER</button>
-                </div>
+                <div class="input-group mt-1"><input type="tel" id="newMobileInput" class="form-control fw-bold" maxlength="10" placeholder="Enter New 10-Digit Mobile"><button class="btn btn-success fw-bold px-4" onclick="updateMobileData()">UPDATE NUMBER</button></div>
             `;
         }
     } catch(e) { alert("Error: " + e.message); }
@@ -441,30 +417,21 @@ async function updateMobileData() {
     
     setLoader(true, "Updating Mobile Number Instantly...", "");
     try {
-        // Find user and change mobile in local array
         let userIndex = cachedDBData.findIndex(m => m.mno === currentMnoToUpdate);
         cachedDBData[userIndex].mobile = newMob;
-        
-        // Save entire array back to database instantly
-        await db.collection("settings").doc("master_db").update({
-            data: JSON.stringify(cachedDBData)
-        });
-        
+        await db.collection("settings").doc("master_db").update({ data: JSON.stringify(cachedDBData) });
         alert("Success! Mobile Number Updated. Member can now login.");
-        document.getElementById('update-mob-res').classList.add('hidden');
-        document.getElementById('searchMno').value = "";
+        document.getElementById('update-mob-res').classList.add('hidden'); document.getElementById('searchMno').value = "";
     } catch(e) { alert("Error updating: " + e.message); }
     setLoader(false);
 }
 
-// Instant Member Login (Fetching from JSON String)
 async function doMemberLogin() {
     const mob = document.getElementById('memMobile').value.trim();
     if(mob.length < 10) return alert("Enter valid 10-digit Mobile Number!");
     setLoader(true, "Verifying Details Fast...", "");
 
     try {
-        // Check if registration already done
         const reg = await db.collection("registrations").where("Mobile", "==", mob).get();
         if(!reg.empty) {
             const d = reg.docs[0].data();
@@ -472,7 +439,6 @@ async function doMemberLogin() {
             setLoader(false); return;
         }
 
-        // Fast search in single DB JSON
         const members = await fetchMasterDB();
         const found = members.find(m => m.mobile === mob);
         
@@ -482,9 +448,7 @@ async function doMemberLogin() {
             document.getElementById('dispNative').value = found.native;
             document.getElementById('dispAddr').value = found.addr;
             showSection('reg-form-sec');
-        } else {
-            alert("Mobile Number NOT FOUND in List! Check number or contact Admin to update it.");
-        }
+        } else alert("Mobile Number NOT FOUND in List! Check number or contact Admin to update it.");
     } catch(e) { alert("System Error: " + e.message); }
     setLoader(false);
 }
@@ -504,12 +468,32 @@ function createStudentForm() {
                 <div class="col-md-4"><label class="small text-muted fw-bold">SURNAME</label><input type="text" class="form-control s-surname" placeholder="Surname"></div>
                 <div class="col-md-3 mt-2"><label class="small text-muted fw-bold">STANDARD</label><input type="text" class="form-control s-std" placeholder="Std (e.g. 10th)"></div>
                 <div class="col-md-5 mt-2"><label class="small text-muted fw-bold">SCHOOL/COLLEGE</label><input type="text" class="form-control s-school" placeholder="School Name"></div>
-                <div class="col-md-4 mt-2"><label class="small text-muted fw-bold text-danger">UPLOAD MARKSHEET (Max 5MB)</label><input type="file" class="form-control s-file border-danger" accept="image/*,.pdf"></div>
+                <div class="col-md-4 mt-2"><label class="small text-muted fw-bold text-danger">UPLOAD PHOTO (Marksheet)</label><input type="file" class="form-control s-file border-danger" accept="image/*"></div>
             </div>
         </div>`;
     }
 }
 
+// Compressor Logic
+async function compressImage(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = event => {
+            const img = new Image(); img.src = event.target.result;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const MAX_WIDTH = 800; const scaleSize = MAX_WIDTH / img.width;
+                canvas.width = MAX_WIDTH; canvas.height = img.height * scaleSize;
+                const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                canvas.toBlob((blob) => { resolve(blob); }, 'image/jpeg', 0.6); 
+            };
+        };
+        reader.onerror = error => reject(error);
+    });
+}
+
+// 100% FREE IMGBB API UPLOAD (Bypass Firebase Storage)
 async function finalSubmit() {
     const entries = document.querySelectorAll('.student-entry');
     const uploadPromises = [];
@@ -517,42 +501,45 @@ async function finalSubmit() {
     for(let entry of entries) {
         const file = entry.querySelector('.s-file').files[0];
         const sName = entry.querySelector('.s-name').value.toUpperCase();
-        
-        if(!file || !sName) return alert("Please fill Student Name and Upload Marksheet for all students!");
-        if(file.size > 5 * 1024 * 1024) return alert(`Error: File for ${sName} is too large. Keep it under 5MB.`);
+        if(!file || !sName) return alert("Please fill Student Name and Upload Photo for all students!");
     }
 
-    setLoader(true, "Uploading Documents...", "Please wait, PDF/Images take a few seconds.");
+    setLoader(true, "Saving securely to Cloud...", "Uploading Marksheets. Please wait...");
     
     try {
         for(let entry of entries) {
             const file = entry.querySelector('.s-file').files[0];
             const sName = entry.querySelector('.s-name').value.toUpperCase();
             
-            const ref = storage.ref(`docs/${Date.now()}_${file.name}`);
+            const compressedBlob = await compressImage(file);
             
-            const task = new Promise((resolve, reject) => {
-                const uploadTask = ref.put(file);
-                uploadTask.on('state_changed', null, 
-                    (error) => reject(error), 
-                    async () => {
-                        const url = await uploadTask.snapshot.ref.getDownloadURL();
-                        resolve({
-                            StudentName: sName,
-                            FatherName: entry.querySelector('.s-fname').value.toUpperCase(),
-                            Surname: entry.querySelector('.s-surname').value.toUpperCase(),
-                            Standard: entry.querySelector('.s-std').value.toUpperCase(),
-                            SchoolCollege: entry.querySelector('.s-school').value.toUpperCase(),
-                            MarksheetURL: url
-                        });
-                    }
-                );
-            });
+            // Upload to ImgBB Free Server
+            const formData = new FormData();
+            formData.append("image", compressedBlob, sName+".jpg");
+            
+            const task = fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
+                method: 'POST',
+                body: formData
+            }).then(response => response.json())
+              .then(result => {
+                  if(result.success) {
+                      return {
+                          StudentName: sName,
+                          FatherName: entry.querySelector('.s-fname').value.toUpperCase(),
+                          Surname: entry.querySelector('.s-surname').value.toUpperCase(),
+                          Standard: entry.querySelector('.s-std').value.toUpperCase(),
+                          SchoolCollege: entry.querySelector('.s-school').value.toUpperCase(),
+                          MarksheetURL: result.data.url // Free Public Link
+                      };
+                  } else throw new Error("Image Upload Failed");
+              });
+              
             uploadPromises.push(task);
         }
         
         const studentData = await Promise.all(uploadPromises);
         
+        // Save text data to Free Firebase Firestore
         const token = "BT" + Math.floor(1000 + Math.random() * 9000);
         await db.collection("registrations").add({
             Token: token, Amount: studentData.length * 80, Mobile: document.getElementById('memMobile').value,
@@ -563,13 +550,12 @@ async function finalSubmit() {
         showSuccess(token, studentData.length * 80);
     } catch(e) { 
         console.error(e);
-        alert("UPLOAD FAILED! Make sure Firebase Storage and Firestore rules are set properly.");
+        alert("Registration Failed! Make sure you added correct ImgBB API key.");
     } finally {
         setLoader(false);
     }
 }
 
-// Logins & Basic Actions
 function doAdminLogin() {
     const id = document.getElementById('admID').value.toUpperCase();
     const pass = document.getElementById('admPass').value;
@@ -632,7 +618,7 @@ async function downloadFullExcel() {
     let data = []; snap.forEach(d => {
         let r = d.data();
         r.Students.forEach((stu) => {
-            data.push({ Token: r.Token, Date: r.Date, Status: r.Status, MemberNo: r.MemberNo, MemberName: r.MemberName, Mobile: r.Mobile, StudentName: stu.StudentName, FatherName: stu.FatherName, Surname: stu.Surname, Standard: stu.Standard, School: stu.SchoolCollege, FileURL: stu.MarksheetURL });
+            data.push({ Token: r.Token, Date: r.Date, Status: r.Status, MemberNo: r.MemberNo, MemberName: r.MemberName, Mobile: r.Mobile, StudentName: stu.StudentName, FatherName: stu.FatherName, Surname: stu.Surname, Standard: stu.Standard, School: stu.SchoolCollege, PhotoLink: stu.MarksheetURL });
         });
     });
     XLSX.writeFile(XLSX.utils.book_append_sheet(XLSX.utils.book_new(), XLSX.utils.json_to_sheet(data), "Data"), "All_Registrations.xlsx");
