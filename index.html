@@ -21,7 +21,7 @@
         .password-container { position: relative; }
         .eye-icon { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #6c757d; font-size: 1.2rem; }
         
-        #loader { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.9); z-index:10000; display:none; flex-direction:column; align-items:center; justify-content:center; }
+        #loader { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.95); z-index:10000; display:none; flex-direction:column; align-items:center; justify-content:center; }
         .student-entry { background: #fff; border: 1px solid #dee2e6; padding: 15px; border-radius: 12px; margin-bottom: 15px; border-left: 5px solid var(--primary); box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
         .nav-btn { cursor: pointer; padding: 10px 15px; font-weight: bold; border-radius: 8px; color: var(--primary); }
         
@@ -34,8 +34,9 @@
 <body onload="checkRememberMe()">
 
 <div id="loader">
-    <div class="spinner-border text-primary" role="status"></div>
-    <h5 class="mt-2 fw-bold" id="loader-text">Processing...</h5>
+    <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status"></div>
+    <h5 class="mt-3 fw-bold text-primary" id="loader-text">Processing...</h5>
+    <p class="text-muted small" id="loader-subtext">Please do not refresh the page.</p>
 </div>
 
 <!-- Header -->
@@ -137,7 +138,7 @@
                 </div>
                 
                 <div class="p-4 bg-light border rounded mt-3 text-center">
-                    <h6 class="fw-bold text-primary">UPLOAD MASTER CSV FILE (BUG FIXED)</h6>
+                    <h6 class="fw-bold text-primary">UPLOAD MASTER CSV FILE</h6>
                     <p class="small text-danger">Format: MemberNo, Name, Native, Mobile, Address</p>
                     <input type="file" id="masterCSV" class="form-control mb-3 mx-auto" style="max-width: 400px;" accept=".csv">
                     <button class="btn btn-primary px-5 fw-bold" onclick="uploadMasterInstant()">🚀 UPLOAD DATA</button>
@@ -286,9 +287,10 @@ const committeeMobiles = [
     "9879033203", "9327513549", "9825253932", "9909902687"
 ];
 
-function setLoader(s, t="Processing...") { 
-    document.getElementById('loader').style.display = s ? 'flex' : 'none'; 
-    document.getElementById('loader-text').innerText = t;
+function setLoader(show, mainText="Processing...", subText="Please do not refresh the page.") { 
+    document.getElementById('loader').style.display = show ? 'flex' : 'none'; 
+    document.getElementById('loader-text').innerText = mainText;
+    document.getElementById('loader-subtext').innerText = subText;
 }
 
 function showSection(id) {
@@ -309,18 +311,13 @@ function togglePassword(inputId, iconElement) {
     }
 }
 
-// --- LOAD STATISTICS & RECORDS ---
-let allDeliveredData = []; // Store for committee excel
+let allDeliveredData = [];
 
 async function loadStatistics() {
     try {
         const snap = await db.collection("registrations").get();
-        let totalMem = 0;
-        let totalStu = 0;
-        let totalDel = 0;
-        
-        let tableHTML = "";
-        allDeliveredData = [];
+        let totalMem = 0; let totalStu = 0; let totalDel = 0;
+        let tableHTML = ""; allDeliveredData = [];
 
         snap.forEach(doc => {
             const data = doc.data();
@@ -339,7 +336,6 @@ async function loadStatistics() {
             }
         });
 
-        // Update UI counters in both Admin and Committee panels
         document.querySelectorAll('.adm-members-count').forEach(e => e.innerText = totalMem);
         document.querySelectorAll('.adm-students-count').forEach(e => e.innerText = totalStu);
         document.querySelectorAll('.adm-delivered-count').forEach(e => e.innerText = totalDel);
@@ -350,78 +346,59 @@ async function loadStatistics() {
     } catch(e) { console.error("Stats error", e); }
 }
 
-// --- ADMIN: CSV UPLOAD (Fixed MNO Document ID issue) ---
 async function uploadMasterInstant() {
     const file = document.getElementById('masterCSV').files[0];
     if(!file) return alert("Please Select CSV File!");
     
-    setLoader(true, "Saving Clean Database (Takes 10-15 Sec)...");
+    setLoader(true, "Saving Database...", "Takes about 10-15 seconds.");
     
     const reader = new FileReader();
     reader.onload = async function(e) {
         try {
             const lines = e.target.result.split(/\r?\n/);
-            let batch = db.batch();
-            let count = 0;
-            let promises = [];
+            let batch = db.batch(); let count = 0; let promises = [];
 
             for(let i=0; i<lines.length; i++) {
                 const d = lines[i].split(",");
                 const mnoClean = d[0] ? d[0].replace(/['"]/g, '').trim().toUpperCase() : "";
                 
-                if(mnoClean && d.length >= 2) { // Sirf wahi save karo jisme MNO ho
-                    const nameClean = d[1] ? d[1].replace(/['"]/g, '').trim() : "";
-                    const nativeClean = d[2] ? d[2].replace(/['"]/g, '').trim() : "";
-                    const mobileNum = d[3] ? d[3].replace(/['"]/g, '').trim() : "";
-                    const addrClean = d[4] ? d[4].replace(/['"]/g, '').trim() : "";
-
-                    // DOCUMENT ID ab Mobile ki jagah MNO hoga (Badi problem solved)
+                if(mnoClean && d.length >= 2) {
                     const docRef = db.collection("master_members").doc(mnoClean);
-                    
                     batch.set(docRef, {
                         mno: mnoClean,
-                        name: nameClean,
-                        native: nativeClean,
-                        mobile: mobileNum,
-                        addr: addrClean
+                        name: d[1] ? d[1].replace(/['"]/g, '').trim() : "",
+                        native: d[2] ? d[2].replace(/['"]/g, '').trim() : "",
+                        mobile: d[3] ? d[3].replace(/['"]/g, '').trim() : "",
+                        addr: d[4] ? d[4].replace(/['"]/g, '').trim() : ""
                     });
                     
                     count++;
-                    if(count === 450) {
-                        promises.push(batch.commit());
-                        batch = db.batch();
-                        count = 0;
-                    }
+                    if(count === 450) { promises.push(batch.commit()); batch = db.batch(); count = 0; }
                 }
             }
             if(count > 0) promises.push(batch.commit());
             await Promise.all(promises);
-            
-            alert(`SUCCESS! Data Uploaded. Now all members (even without mobile numbers) are searchable.`);
+            alert(`SUCCESS! Data Uploaded.`);
         } catch(err) { alert("Upload Error: " + err.message); }
         setLoader(false);
     };
     reader.readAsText(file);
 }
 
-// --- ADMIN: UPDATE MOBILE NUMBER (Fixed based on new MNO ID) ---
 let currentMnoToUpdate = null;
-
 async function searchMemberByMno() {
     const mno = document.getElementById('searchMno').value.replace(/['"]/g, '').trim().toUpperCase();
     if(!mno) return alert("Enter Member Number!");
     
-    setLoader(true, "Searching Member...");
+    setLoader(true, "Searching Member...", "");
     try {
         const docRef = await db.collection("master_members").doc(mno).get();
-        
         if(!docRef.exists) {
             alert("Member Number '" + mno + "' not found! Make sure you entered it correctly.");
             document.getElementById('update-mob-res').classList.add('hidden');
         } else {
             const data = docRef.data();
             currentMnoToUpdate = mno;
-            
             document.getElementById('update-mob-res').classList.remove('hidden');
             document.getElementById('update-mob-res').innerHTML = `
                 <div class="d-flex justify-content-between align-items-center">
@@ -446,25 +423,20 @@ async function updateMobileData() {
     const newMob = document.getElementById('newMobileInput').value.trim();
     if(newMob.length !== 10) return alert("Enter valid 10-digit mobile number!");
     
-    setLoader(true, "Updating Mobile Number...");
+    setLoader(true, "Updating Mobile Number...", "");
     try {
-        // Sirf us Document (MNO) ke andar mobile field update kardo
-        await db.collection("master_members").doc(currentMnoToUpdate).update({
-            mobile: newMob
-        });
-        
-        alert("Success! Mobile Number Updated. Member can now login with the new number.");
+        await db.collection("master_members").doc(currentMnoToUpdate).update({ mobile: newMob });
+        alert("Success! Mobile Number Updated. Member can now login.");
         document.getElementById('update-mob-res').classList.add('hidden');
         document.getElementById('searchMno').value = "";
     } catch(e) { alert("Error updating: " + e.message); }
     setLoader(false);
 }
 
-// --- MEMBER: INSTANT LOGIN ---
 async function doMemberLogin() {
     const mob = document.getElementById('memMobile').value.trim();
     if(mob.length < 10) return alert("Enter valid 10-digit Mobile Number!");
-    setLoader(true, "Verifying Details...");
+    setLoader(true, "Verifying Details...", "");
 
     try {
         const reg = await db.collection("registrations").where("Mobile", "==", mob).get();
@@ -474,9 +446,7 @@ async function doMemberLogin() {
             setLoader(false); return;
         }
 
-        // Ab Document id nahi hai, field se search karenge
         const snap = await db.collection("master_members").where("mobile", "==", mob).get();
-        
         if(!snap.empty) {
             const found = snap.docs[0].data();
             document.getElementById('dispMNo').value = found.mno;
@@ -491,7 +461,6 @@ async function doMemberLogin() {
     setLoader(false);
 }
 
-// --- REGISTRATION ---
 function createStudentForm() {
     const c = document.getElementById('selCount').value;
     document.getElementById('totalAmt').innerText = c * 80;
@@ -507,59 +476,90 @@ function createStudentForm() {
                 <div class="col-md-4"><label class="small text-muted fw-bold">SURNAME</label><input type="text" class="form-control s-surname" placeholder="Surname"></div>
                 <div class="col-md-3 mt-2"><label class="small text-muted fw-bold">STANDARD</label><input type="text" class="form-control s-std" placeholder="Std (e.g. 10th)"></div>
                 <div class="col-md-5 mt-2"><label class="small text-muted fw-bold">SCHOOL/COLLEGE</label><input type="text" class="form-control s-school" placeholder="School Name"></div>
-                <div class="col-md-4 mt-2"><label class="small text-muted fw-bold text-danger">UPLOAD MARKSHEET</label><input type="file" class="form-control s-file border-danger"></div>
+                <div class="col-md-4 mt-2"><label class="small text-muted fw-bold text-danger">UPLOAD MARKSHEET (Max 5MB)</label><input type="file" class="form-control s-file border-danger" accept="image/*,.pdf"></div>
             </div>
         </div>`;
     }
 }
 
+// SECURE & FAST FINAL SUBMIT
 async function finalSubmit() {
     const entries = document.querySelectorAll('.student-entry');
     const uploadPromises = [];
-    setLoader(true, "Saving Registration...");
+    
+    // Check file sizes BEFORE starting loader
+    for(let entry of entries) {
+        const file = entry.querySelector('.s-file').files[0];
+        const sName = entry.querySelector('.s-name').value.toUpperCase();
+        
+        if(!file || !sName) {
+            return alert("Please fill Student Name and Upload Marksheet for all students!");
+        }
+        if(file.size > 5 * 1024 * 1024) { // 5MB Limit Check
+            return alert(`Error: The file for ${sName} is too large (${(file.size/1024/1024).toFixed(1)}MB). Please upload a file smaller than 5MB.`);
+        }
+    }
+
+    setLoader(true, "Uploading Documents...", "Please wait, PDF/Images take a few seconds to upload securely.");
+    
     try {
         for(let entry of entries) {
             const file = entry.querySelector('.s-file').files[0];
             const sName = entry.querySelector('.s-name').value.toUpperCase();
-            if(!file || !sName) throw new Error("Please fill Student Name and Upload Marksheet for all students!");
             
             const ref = storage.ref(`docs/${Date.now()}_${file.name}`);
-            const task = ref.put(file).then(async s => ({
-                StudentName: sName,
-                FatherName: entry.querySelector('.s-fname').value.toUpperCase(),
-                Surname: entry.querySelector('.s-surname').value.toUpperCase(),
-                Standard: entry.querySelector('.s-std').value.toUpperCase(),
-                SchoolCollege: entry.querySelector('.s-school').value.toUpperCase(),
-                MarksheetURL: await s.ref.getDownloadURL()
-            }));
+            
+            // Promise wrapper for better Error Catching on Uploads
+            const task = new Promise((resolve, reject) => {
+                const uploadTask = ref.put(file);
+                uploadTask.on('state_changed', null, 
+                    (error) => reject(error), 
+                    async () => {
+                        const url = await uploadTask.snapshot.ref.getDownloadURL();
+                        resolve({
+                            StudentName: sName,
+                            FatherName: entry.querySelector('.s-fname').value.toUpperCase(),
+                            Surname: entry.querySelector('.s-surname').value.toUpperCase(),
+                            Standard: entry.querySelector('.s-std').value.toUpperCase(),
+                            SchoolCollege: entry.querySelector('.s-school').value.toUpperCase(),
+                            MarksheetURL: url
+                        });
+                    }
+                );
+            });
             uploadPromises.push(task);
         }
+        
         const studentData = await Promise.all(uploadPromises);
+        
         const token = "BT" + Math.floor(1000 + Math.random() * 9000);
         await db.collection("registrations").add({
             Token: token, Amount: studentData.length * 80, Mobile: document.getElementById('memMobile').value,
             MemberName: document.getElementById('dispMName').value, MemberNo: document.getElementById('dispMNo').value,
             Students: studentData, Status: "PENDING", Date: new Date().toLocaleDateString()
         });
+        
         showSuccess(token, studentData.length * 80);
-    } catch(e) { alert(e.message); }
-    setLoader(false);
+    } catch(e) { 
+        console.error("Firebase Storage Error:", e);
+        if(e.code === "storage/unauthorized") {
+            alert("UPLOAD FAILED! Firebase Storage Rules are blocking the upload. Please complete STEP 1 (Update Firebase Rules).");
+        } else {
+            alert("Error: " + e.message); 
+        }
+    } finally {
+        setLoader(false);
+    }
 }
 
-// --- LOGINS ---
 function doAdminLogin() {
     const id = document.getElementById('admID').value.toUpperCase();
     const pass = document.getElementById('admPass').value;
     const remember = document.getElementById('admRemember').checked;
-
     if(id === "BATRISI" && pass === "Bat@3232") {
-        if(remember) {
-            localStorage.setItem('admID', id); localStorage.setItem('admPass', pass); localStorage.setItem('admRemember', 'true');
-        } else {
-            localStorage.removeItem('admID'); localStorage.removeItem('admPass'); localStorage.removeItem('admRemember');
-        }
-        showSection('admin-dash-sec');
-        loadStatistics();
+        if(remember) { localStorage.setItem('admID', id); localStorage.setItem('admPass', pass); localStorage.setItem('admRemember', 'true'); } 
+        else { localStorage.removeItem('admID'); localStorage.removeItem('admPass'); localStorage.removeItem('admRemember'); }
+        showSection('admin-dash-sec'); loadStatistics();
     } else alert("Wrong Admin Credentials");
 }
 
@@ -567,61 +567,38 @@ function doCommitteeLogin() {
     const commMobile = document.getElementById('commMobile').value.trim();
     const commPass = document.getElementById('commPass').value;
     const remember = document.getElementById('commRemember').checked;
-
     if(!committeeMobiles.includes(commMobile)) return alert("Access Denied! Mobile not in Committee List.");
-    
     if(commPass === "Bat@3232") {
-        if(remember) {
-            localStorage.setItem('commMobile', commMobile); localStorage.setItem('commPass', commPass); localStorage.setItem('commRemember', 'true');
-        } else {
-            localStorage.removeItem('commMobile'); localStorage.removeItem('commPass'); localStorage.removeItem('commRemember');
-        }
-        showSection('comm-dash-sec');
-        loadStatistics();
+        if(remember) { localStorage.setItem('commMobile', commMobile); localStorage.setItem('commPass', commPass); localStorage.setItem('commRemember', 'true'); } 
+        else { localStorage.removeItem('commMobile'); localStorage.removeItem('commPass'); localStorage.removeItem('commRemember'); }
+        showSection('comm-dash-sec'); loadStatistics();
         new Html5Qrcode("reader").start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (t) => searchByToken(t));
     } else alert("Wrong Password!");
 }
 
 function checkRememberMe() {
     if(localStorage.getItem('admRemember') === 'true') {
-        document.getElementById('admID').value = localStorage.getItem('admID');
-        document.getElementById('admPass').value = localStorage.getItem('admPass');
-        document.getElementById('admRemember').checked = true;
+        document.getElementById('admID').value = localStorage.getItem('admID'); document.getElementById('admPass').value = localStorage.getItem('admPass'); document.getElementById('admRemember').checked = true;
     }
     if(localStorage.getItem('commRemember') === 'true') {
-        document.getElementById('commMobile').value = localStorage.getItem('commMobile');
-        document.getElementById('commPass').value = localStorage.getItem('commPass');
-        document.getElementById('commRemember').checked = true;
+        document.getElementById('commMobile').value = localStorage.getItem('commMobile'); document.getElementById('commPass').value = localStorage.getItem('commPass'); document.getElementById('commRemember').checked = true;
     }
 }
 
-// --- SCANNER & EXPORTS ---
 async function searchByToken(tText = null) {
     const t = tText || document.getElementById('manualToken').value.toUpperCase();
     if(!t) return;
-    
     const res = await db.collection("registrations").where("Token", "==", t).get();
-    if(res.empty) {
-        document.getElementById('verify-res').innerHTML = `<h5 class="text-danger fw-bold">Token Not Found</h5>`; return;
-    }
+    if(res.empty) { document.getElementById('verify-res').innerHTML = `<h5 class="text-danger fw-bold">Token Not Found</h5>`; return; }
     const d = res.docs[0].data();
-    
     let btnHtml = d.Status === "DELIVERED" ? `<button class="btn btn-success w-100 mt-3" disabled>ALREADY DELIVERED</button>` : `<button class="btn btn-primary w-100 mt-3 shadow" onclick="markDelivered('${res.docs[0].id}')">MARK AS DELIVERED</button>`;
-    
-    document.getElementById('verify-res').innerHTML = `
-        <h5 class="fw-bold text-primary">${d.MemberName}</h5>
-        <p class="mb-1">Mobile: ${d.Mobile}</p>
-        <p class="mb-1">Students: ${d.Students.length}</p>
-        <h4 class="text-danger fw-bold mt-2">Amount: ₹${d.Amount}</h4>
-        ${btnHtml}
-    `;
+    document.getElementById('verify-res').innerHTML = `<h5 class="fw-bold text-primary">${d.MemberName}</h5><p class="mb-1">Mobile: ${d.Mobile}</p><p class="mb-1">Students: ${d.Students.length}</p><h4 class="text-danger fw-bold mt-2">Amount: ₹${d.Amount}</h4>${btnHtml}`;
 }
 
 async function markDelivered(id) {
     await db.collection("registrations").doc(id).update({Status: "DELIVERED"});
     alert("Books Marked as Delivered!");
-    searchByToken();
-    loadStatistics(); // Reload table and stats
+    searchByToken(); loadStatistics(); 
 }
 
 function showSuccess(t, a) {
@@ -632,33 +609,22 @@ function showSuccess(t, a) {
     new QRCode(document.getElementById("qrcode"), { text: t, width: 160, height: 160 });
 }
 
-// ADMIN EXPORT (ALL DATA)
 async function downloadFullExcel() {
     const snap = await db.collection("registrations").get();
     let data = []; snap.forEach(d => {
         let r = d.data();
         r.Students.forEach((stu) => {
-            data.push({
-                Token: r.Token, Date: r.Date, Status: r.Status, MemberNo: r.MemberNo, MemberName: r.MemberName,
-                Mobile: r.Mobile, StudentName: stu.StudentName, FatherName: stu.FatherName,
-                Surname: stu.Surname, Standard: stu.Standard, School: stu.SchoolCollege
-            });
+            data.push({ Token: r.Token, Date: r.Date, Status: r.Status, MemberNo: r.MemberNo, MemberName: r.MemberName, Mobile: r.Mobile, StudentName: stu.StudentName, FatherName: stu.FatherName, Surname: stu.Surname, Standard: stu.Standard, School: stu.SchoolCollege, FileURL: stu.MarksheetURL });
         });
     });
     XLSX.writeFile(XLSX.utils.book_append_sheet(XLSX.utils.book_new(), XLSX.utils.json_to_sheet(data), "Data"), "All_Registrations.xlsx");
 }
 
-// COMMITTEE EXPORT (ONLY DELIVERED)
 function downloadCommitteeExcel() {
     if(allDeliveredData.length === 0) return alert("No delivered records to export!");
     let data = [];
     allDeliveredData.forEach(r => {
-        r.Students.forEach((stu) => {
-            data.push({
-                Token: r.Token, Status: "DELIVERED", MemberNo: r.MemberNo, MemberName: r.MemberName,
-                Mobile: r.Mobile, Amount: r.Amount, StudentName: stu.StudentName, Standard: stu.Standard
-            });
-        });
+        r.Students.forEach((stu) => { data.push({ Token: r.Token, Status: "DELIVERED", MemberNo: r.MemberNo, MemberName: r.MemberName, Mobile: r.Mobile, Amount: r.Amount, StudentName: stu.StudentName, Standard: stu.Standard }); });
     });
     XLSX.writeFile(XLSX.utils.book_append_sheet(XLSX.utils.book_new(), XLSX.utils.json_to_sheet(data), "Delivered"), "Delivered_Records.xlsx");
 }
