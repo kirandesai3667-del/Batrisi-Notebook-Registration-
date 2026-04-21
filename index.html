@@ -153,11 +153,15 @@
                         <table class="table table-bordered table-hover text-center align-middle m-0" style="font-size: 13px;">
                             <thead class="table-dark sticky-top">
                                 <tr>
-                                    <th>Token</th><th>MNO</th><th>Mobile</th><th>Name</th><th>Status</th><th>Actions</th>
+                                    <th>Token</th>
+                                    <th>Member Details</th>
+                                    <th>Students Data</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="admin-table-body">
-                                <tr><td colspan="6" class="text-muted">Loading records...</td></tr>
+                                <tr><td colspan="5" class="text-muted">Loading records...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -263,11 +267,15 @@
                         <table class="table table-bordered table-hover text-center align-middle m-0" style="font-size: 13px;">
                             <thead class="table-dark sticky-top">
                                 <tr>
-                                    <th>Token</th><th>MNO</th><th>Mobile</th><th>Name</th><th>Status</th><th>Actions</th>
+                                    <th>Token</th>
+                                    <th>Member Details</th>
+                                    <th>Students Data</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="comm-table-body">
-                                <tr><td colspan="6" class="text-muted">Loading records...</td></tr>
+                                <tr><td colspan="5" class="text-muted">Loading records...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -379,13 +387,34 @@ async function loadStatistics() {
                 <button class="btn btn-dark table-action-btn" onclick="executeDelete('${id}')" title="Delete"><i class="bi bi-trash"></i></button>
             `;
 
+            // Member Details Box
+            let memDetailsHTML = `
+                <div class="text-start" style="font-size: 12px; line-height: 1.4;">
+                    <span class="fw-bold text-primary search-mno">MNO: ${data.MemberNo}</span><br>
+                    <span class="fw-bold">${data.MemberName}</span><br>
+                    <span class="text-muted">Native: ${data.Native || '-'}</span><br>
+                    <span class="search-mob text-muted">Mob: ${data.Mobile}</span>
+                </div>
+            `;
+
+            // Student Details Box (ek box me sab)
+            let stuDetailsHTML = "";
+            if(data.Students && data.Students.length > 0) {
+                stuDetailsHTML = data.Students.map((s, idx) => `
+                    <div class="text-start mb-1 pb-1 border-bottom" style="font-size: 11px; line-height: 1.4;">
+                        <span class="fw-bold text-dark">${idx+1}. ${s.StudentName} ${s.FatherName} ${s.Surname}</span><br>
+                        <span class="text-muted">Std: ${s.Standard} | School: ${s.SchoolCollege}</span><br>
+                        <a href="${s.MarksheetURL}" target="_blank" class="text-danger fw-bold text-decoration-none"><i class="bi bi-file-earmark-image"></i> View Document</a>
+                    </div>
+                `).join('');
+            }
+
             tableHTML += `<tr class="record-row">
-                <td class="fw-bold">${data.Token}</td>
-                <td class="search-mno">${data.MemberNo}</td>
-                <td class="search-mob">${data.Mobile}</td>
-                <td style="max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${data.MemberName}</td>
-                <td><span class="badge bg-${badgeColor}">${data.Status}</span></td>
-                <td>${actionBtns}</td>
+                <td class="fw-bold align-middle">${data.Token}</td>
+                <td class="align-middle">${memDetailsHTML}</td>
+                <td class="align-middle">${stuDetailsHTML}</td>
+                <td class="align-middle"><span class="badge bg-${badgeColor}">${data.Status}</span></td>
+                <td class="align-middle">${actionBtns}</td>
             </tr>`;
         });
 
@@ -395,7 +424,7 @@ async function loadStatistics() {
 
         const admTbody = document.getElementById('admin-table-body');
         const commTbody = document.getElementById('comm-table-body');
-        const finalHTML = tableHTML || `<tr><td colspan="6" class="text-muted">No records found</td></tr>`;
+        const finalHTML = tableHTML || `<tr><td colspan="5" class="text-muted">No records found</td></tr>`;
         
         if(admTbody) admTbody.innerHTML = finalHTML;
         if(commTbody) commTbody.innerHTML = finalHTML;
@@ -408,8 +437,11 @@ function filterRecords(inputId, tableBodyId) {
     let rows = document.getElementById(tableBodyId).getElementsByClassName('record-row');
     
     for (let i = 0; i < rows.length; i++) {
-        let mnoCol = rows[i].getElementsByClassName('search-mno')[0].innerText.toUpperCase();
-        let mobCol = rows[i].getElementsByClassName('search-mob')[0].innerText.toUpperCase();
+        let mnoSpan = rows[i].getElementsByClassName('search-mno')[0];
+        let mobSpan = rows[i].getElementsByClassName('search-mob')[0];
+        
+        let mnoCol = mnoSpan ? mnoSpan.innerText.toUpperCase() : "";
+        let mobCol = mobSpan ? mobSpan.innerText.toUpperCase() : "";
         
         if (mnoCol.includes(input) || mobCol.includes(input)) {
             rows[i].style.display = "";
@@ -568,7 +600,7 @@ function createStudentForm() {
                 <div class="col-md-4"><label class="small text-muted fw-bold">SURNAME</label><input type="text" class="form-control s-surname" placeholder="Surname"></div>
                 <div class="col-md-3 mt-2"><label class="small text-muted fw-bold">STANDARD</label><input type="text" class="form-control s-std" placeholder="Std (e.g. 10th)"></div>
                 <div class="col-md-5 mt-2"><label class="small text-muted fw-bold">SCHOOL/COLLEGE</label><input type="text" class="form-control s-school" placeholder="School Name"></div>
-                <div class="col-md-4 mt-2"><label class="small text-muted fw-bold text-danger">UPLOAD PHOTO (Marksheet)</label><input type="file" class="form-control s-file border-danger" accept="image/*"></div>
+                <div class="col-md-4 mt-2"><label class="small text-muted fw-bold text-danger">Last Year Marksheet Or Fees Receipt</label><input type="file" class="form-control s-file border-danger" accept="image/*"></div>
             </div>
         </div>`;
     }
@@ -597,9 +629,9 @@ async function finalSubmit() {
     for(let entry of entries) {
         const file = entry.querySelector('.s-file').files[0];
         const sName = entry.querySelector('.s-name').value.toUpperCase();
-        if(!file || !sName) return alert("Please fill Student Name and Upload Photo for all students!");
+        if(!file || !sName) return alert("Please fill Student Name and Upload Document for all students!");
     }
-    setLoader(true, "Saving securely to Cloud...", "Uploading Marksheets. Please wait...");
+    setLoader(true, "Saving securely to Cloud...", "Uploading Documents. Please wait...");
     try {
         for(let entry of entries) {
             const file = entry.querySelector('.s-file').files[0];
@@ -625,6 +657,7 @@ async function finalSubmit() {
         await db.collection("registrations").add({
             Token: token, Amount: studentData.length * 80, Mobile: document.getElementById('memMobile').value,
             MemberName: document.getElementById('dispMName').value, MemberNo: document.getElementById('dispMNo').value,
+            Native: document.getElementById('dispNative').value, // Saved Native Data
             Students: studentData, Status: "PENDING", Date: new Date().toISOString()
         });
         showSuccess(token, studentData.length * 80);
@@ -681,7 +714,7 @@ async function executeTokenSearch(tokenText, containerId) {
                 <div class="p-2 border border-secondary rounded bg-white mb-2 shadow-sm" style="font-size: 0.9rem;">
                     <div class="fw-bold text-primary">${i+1}. ${s.StudentName} ${s.FatherName} ${s.Surname}</div>
                     <div class="text-muted mb-1">Std: <b>${s.Standard}</b> | School: <b>${s.SchoolCollege}</b></div>
-                    <a href="${s.MarksheetURL}" target="_blank" class="btn btn-sm btn-outline-primary w-100 fw-bold"><i class="bi bi-image"></i> VIEW MARKSHEET / PHOTO</a>
+                    <a href="${s.MarksheetURL}" target="_blank" class="btn btn-sm btn-outline-primary w-100 fw-bold"><i class="bi bi-image"></i> VIEW MARKSHEET / RECEIPT</a>
                 </div>`;
         });
         stuHtml += `</div>`;
@@ -792,10 +825,22 @@ function showSuccess(t, a) {
 
 async function downloadFullExcel() {
     const snap = await db.collection("registrations").get();
-    let data = []; snap.forEach(d => {
+    let data = []; 
+    snap.forEach(d => {
         let r = d.data();
         r.Students.forEach((stu) => {
-            data.push({ Token: r.Token, Date: new Date(r.Date).toLocaleDateString(), Status: r.Status, MemberNo: r.MemberNo, MemberName: r.MemberName, Mobile: r.Mobile, StudentName: stu.StudentName, FatherName: stu.FatherName, Surname: stu.Surname, Standard: stu.Standard, School: stu.SchoolCollege, PhotoLink: stu.MarksheetURL });
+            data.push({ 
+                "MEMBER NO": r.MemberNo,
+                "FULL NAME": r.MemberName,
+                "NATIVE": r.Native || "-",
+                "STUDENT FULL NAME": `${stu.StudentName} ${stu.FatherName} ${stu.Surname}`,
+                "STANDARD": stu.Standard,
+                "SCHOOL/COLLEGE": stu.SchoolCollege,
+                "DOCUMENT LINK": stu.MarksheetURL,
+                "TOKEN": r.Token,
+                "MOBILE": r.Mobile,
+                "STATUS": r.Status
+            });
         });
     });
     XLSX.writeFile(XLSX.utils.book_append_sheet(XLSX.utils.book_new(), XLSX.utils.json_to_sheet(data), "Data"), "All_Registrations.xlsx");
