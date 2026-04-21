@@ -142,14 +142,14 @@
                     <h6 class="fw-bold text-warning border-bottom pb-2 mb-3"><i class="bi bi-phone-vibrate"></i> UPDATE MEMBER MOBILE NUMBER</h6>
                     <div class="row g-2 align-items-center">
                         <div class="col-md-8">
-                            <input type="text" id="searchMno" class="form-control fw-bold" placeholder="Enter Member Number (MNO)">
+                            <input type="text" id="searchMno" class="form-control fw-bold" placeholder="Enter Exact Member Number (MNO)">
                         </div>
                         <div class="col-md-4">
                             <button class="btn btn-warning w-100 fw-bold text-dark" onclick="searchMemberByMno()">SEARCH MEMBER</button>
                         </div>
                     </div>
                     
-                    <!-- Result Box (Hidden by default) -->
+                    <!-- Result Box -->
                     <div id="update-mob-res" class="mt-3 hidden bg-light p-3 rounded border">
                         <!-- Content Injected via JS -->
                     </div>
@@ -282,12 +282,12 @@ function togglePassword(inputId, iconElement) {
     }
 }
 
-// --- ADMIN: BATCH CSV UPLOAD (Fast Database) ---
+// --- ADMIN: BATCH CSV UPLOAD (Fixed for strict MNO searching) ---
 async function uploadMasterInstant() {
     const file = document.getElementById('masterCSV').files[0];
     if(!file) return alert("Please Select CSV File!");
     
-    setLoader(true, "Saving Fast Database (Please Wait 10 Sec)...");
+    setLoader(true, "Saving Clean Database (Please Wait)...");
     
     const reader = new FileReader();
     reader.onload = async function(e) {
@@ -300,16 +300,24 @@ async function uploadMasterInstant() {
 
             for(let i=0; i<lines.length; i++) {
                 const d = lines[i].split(",");
+                // Agar column 4 (mobile) valid hai
                 if(d.length >= 4 && d[3] && d[3].trim().length >= 10) {
-                    const mobileNum = d[3].trim();
+                    
+                    // Saare unwanted spaces aur quotes hata diye
+                    const mnoClean = d[0].replace(/['"]/g, '').trim().toUpperCase();
+                    const nameClean = d[1].replace(/['"]/g, '').trim();
+                    const nativeClean = d[2].replace(/['"]/g, '').trim();
+                    const mobileNum = d[3].replace(/['"]/g, '').trim();
+                    const addrClean = d[4] ? d[4].replace(/['"]/g, '').trim() : "";
+
                     const docRef = db.collection("master_members").doc(mobileNum);
                     
                     batch.set(docRef, {
-                        mno: d[0].trim(),
-                        name: d[1].trim(),
-                        native: d[2].trim(),
+                        mno: mnoClean,
+                        name: nameClean,
+                        native: nativeClean,
                         mobile: mobileNum,
-                        addr: d[4] ? d[4].trim() : ""
+                        addr: addrClean
                     });
                     
                     count++;
@@ -332,18 +340,21 @@ async function uploadMasterInstant() {
     reader.readAsText(file);
 }
 
-// --- ADMIN: UPDATE MOBILE NUMBER LOGIC ---
+// --- ADMIN: UPDATE MOBILE NUMBER LOGIC (Fixed exact string matching) ---
 let currentUpdateMember = null;
 
 async function searchMemberByMno() {
-    const mno = document.getElementById('searchMno').value.trim();
+    // strict text cleaning so it exactly matches the DB string
+    const mno = document.getElementById('searchMno').value.replace(/['"]/g, '').trim().toUpperCase();
+    
     if(!mno) return alert("Enter Member Number!");
     
     setLoader(true, "Searching Member...");
     try {
         const snapshot = await db.collection("master_members").where("mno", "==", mno).get();
+        
         if(snapshot.empty) {
-            alert("Member Number not found in Database!");
+            alert("Member Number '" + mno + "' not found! Make sure you entered it correctly.");
             document.getElementById('update-mob-res').classList.add('hidden');
         } else {
             const doc = snapshot.docs[0];
@@ -375,7 +386,6 @@ async function updateMobileData() {
     
     setLoader(true, "Updating Mobile Number...");
     try {
-        // Check if new mobile already assigned to someone else
         const check = await db.collection("master_members").doc(newMob).get();
         if(check.exists) {
             alert("This Mobile Number is already assigned to another member in the database!");
@@ -383,12 +393,10 @@ async function updateMobileData() {
             return;
         }
 
-        // Create new record with new mobile ID
         let newData = currentUpdateMember.data;
         newData.mobile = newMob;
         
         await db.collection("master_members").doc(newMob).set(newData);
-        // Delete old record
         await db.collection("master_members").doc(currentUpdateMember.id).delete();
         
         alert("Success! Mobile Number Updated. Member can now login with the new number.");
@@ -604,7 +612,6 @@ async function downloadFullExcel() {
     const snap = await db.collection("registrations").get();
     let data = []; snap.forEach(d => {
         let r = d.data();
-        // Flatten student data for excel readability
         r.Students.forEach((stu, i) => {
             data.push({
                 Token: r.Token, Date: r.Date, Status: r.Status, MemberNo: r.MemberNo, MemberName: r.MemberName,
