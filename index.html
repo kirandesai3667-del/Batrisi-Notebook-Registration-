@@ -172,7 +172,7 @@
                     <h6 class="fw-bold text-primary border-bottom pb-2 mb-3"><i class="bi bi-search"></i> SEARCH & PRINT TOKEN DETAILS</h6>
                     <div class="row g-2 align-items-center">
                         <div class="col-md-8">
-                            <input type="text" id="admSearchTokenInput" class="form-control fw-bold" placeholder="Enter Token Number (e.g., BT1234)">
+                            <input type="text" id="admSearchTokenInput" class="form-control fw-bold" placeholder="Enter Token Number (e.g., BAT001)">
                         </div>
                         <div class="col-md-4">
                             <button class="btn btn-primary w-100 fw-bold text-white" onclick="searchTokenAdmin()">SEARCH TOKEN</button>
@@ -698,12 +698,33 @@ async function finalSubmit() {
             uploadPromises.push(task);
         }
         const studentData = await Promise.all(uploadPromises);
-        const token = "BT" + Math.floor(1000 + Math.random() * 9000);
+
+        // --- SEQUENTIAL TOKEN GENERATION LOGIC ---
+        const counterRef = db.collection("settings").doc("token_counter");
+        const nextTokenNum = await db.runTransaction(async (transaction) => {
+            const doc = await transaction.get(counterRef);
+            let nextNum = 1; // Default to 1 if counter doesn't exist yet
+            if (doc.exists && doc.data().lastNumber) {
+                nextNum = doc.data().lastNumber + 1;
+            }
+            transaction.set(counterRef, { lastNumber: nextNum }, { merge: true });
+            return nextNum;
+        });
+
+        // Format to BAT001, BAT015, BAT120, etc.
+        const token = "BAT" + String(nextTokenNum).padStart(3, '0');
+
         await db.collection("registrations").add({
-            Token: token, Amount: studentData.length * 80, Mobile: document.getElementById('memMobile').value,
-            MemberName: document.getElementById('dispMName').value, MemberNo: document.getElementById('dispMNo').value,
+            Token: token, 
+            TokenId: nextTokenNum, // Save ID for ordering if needed
+            Amount: studentData.length * 80, 
+            Mobile: document.getElementById('memMobile').value,
+            MemberName: document.getElementById('dispMName').value, 
+            MemberNo: document.getElementById('dispMNo').value,
             Native: document.getElementById('dispNative').value,
-            Students: studentData, Status: "PENDING", Date: new Date().toISOString()
+            Students: studentData, 
+            Status: "PENDING", 
+            Date: new Date().toISOString()
         });
         showSuccess(token, studentData.length * 80);
     } catch(e) { console.error(e); alert("Registration Failed! Something went wrong."); } 
