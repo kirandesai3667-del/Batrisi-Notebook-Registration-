@@ -163,7 +163,7 @@
                     </div>
                 </div>
                 
-                <!-- NEW: ADMIN TOKEN SEARCH & PRINT -->
+                <!-- ADMIN TOKEN SEARCH & PRINT -->
                 <div class="p-4 bg-white border border-primary rounded mt-4 shadow-sm">
                     <h6 class="fw-bold text-primary border-bottom pb-2 mb-3"><i class="bi bi-search"></i> SEARCH & PRINT TOKEN DETAILS</h6>
                     <div class="row g-2 align-items-center">
@@ -369,12 +369,10 @@ async function loadStatistics() {
             totalStu += data.Students ? data.Students.length : 0;
             if(data.Status === "DELIVERED") totalDel++;
 
-            // Status Badge Logic
-            let badgeColor = "warning text-dark"; // For PENDING
+            let badgeColor = "warning text-dark"; 
             if(data.Status === "DELIVERED") badgeColor = "success";
             if(data.Status === "DECLINED") badgeColor = "danger";
 
-            // Action Buttons
             let actionBtns = `
                 <button class="btn btn-success table-action-btn" onclick="executeApprove('${id}')" title="Approve"><i class="bi bi-check-lg"></i></button>
                 <button class="btn btn-danger table-action-btn" onclick="executeDecline('${id}')" title="Decline"><i class="bi bi-x-lg"></i></button>
@@ -391,12 +389,10 @@ async function loadStatistics() {
             </tr>`;
         });
 
-        // Update counters
         document.querySelectorAll('.adm-members-count').forEach(e => e.innerText = totalMem);
         document.querySelectorAll('.adm-students-count').forEach(e => e.innerText = totalStu);
         document.querySelectorAll('.adm-delivered-count').forEach(e => e.innerText = totalDel);
 
-        // Update Tables
         const admTbody = document.getElementById('admin-table-body');
         const commTbody = document.getElementById('comm-table-body');
         const finalHTML = tableHTML || `<tr><td colspan="6" class="text-muted">No records found</td></tr>`;
@@ -407,7 +403,6 @@ async function loadStatistics() {
     } catch(e) { console.error("Stats error", e); }
 }
 
-// --- FILTER/SEARCH TABLE RECORDS ---
 function filterRecords(inputId, tableBodyId) {
     let input = document.getElementById(inputId).value.toUpperCase();
     let rows = document.getElementById(tableBodyId).getElementsByClassName('record-row');
@@ -424,7 +419,6 @@ function filterRecords(inputId, tableBodyId) {
     }
 }
 
-// --- RECORD ACTION FUNCTIONS (Approve, Decline, Delete) ---
 async function executeApprove(id) {
     if(!confirm("Are you sure you want to APPROVE (Mark as Delivered) this record?")) return;
     setLoader(true, "Approving...");
@@ -439,10 +433,7 @@ async function executeDecline(id) {
     if(reason === null || reason.trim() === "") return alert("Action Cancelled. Reason is mandatory to decline!");
     
     setLoader(true, "Declining...");
-    await db.collection("registrations").doc(id).update({
-        Status: "DECLINED",
-        DeclineReason: reason.trim()
-    });
+    await db.collection("registrations").doc(id).update({ Status: "DECLINED", DeclineReason: reason.trim() });
     alert("Record Declined successfully. Member will see the reason.");
     setLoader(false);
     loadStatistics();
@@ -457,7 +448,6 @@ async function executeDelete(id) {
     loadStatistics();
 }
 
-// --- UPLOAD MASTER CSV ---
 async function uploadMasterInstant() {
     const file = document.getElementById('masterCSV').files[0];
     if(!file) return alert("Please Select CSV File!");
@@ -488,7 +478,6 @@ async function uploadMasterInstant() {
     reader.readAsText(file);
 }
 
-// --- UPDATE MOBILE NUMBER LOGIC ---
 let currentMnoToUpdate = null;
 let cachedDBData = null;
 
@@ -535,7 +524,6 @@ async function updateMobileData() {
     setLoader(false);
 }
 
-// --- MEMBER LOGIN (Added Decline Logic) ---
 async function doMemberLogin() {
     const mob = document.getElementById('memMobile').value.trim();
     if(mob.length < 10) return alert("Enter valid 10-digit Mobile Number!");
@@ -544,15 +532,11 @@ async function doMemberLogin() {
         const reg = await db.collection("registrations").where("Mobile", "==", mob).get();
         if(!reg.empty) {
             const d = reg.docs[0].data(); 
-            
-            // IF DECLINED: Show Decline Error Page
             if(d.Status === "DECLINED") {
                 showSection('declined-sec');
                 document.getElementById('decReasonText').innerText = d.DeclineReason || "Reason not provided by committee.";
                 setLoader(false); return;
             }
-            
-            // IF OK (PENDING/DELIVERED): Show Token/QR
             showSuccess(d.Token, d.Amount); 
             setLoader(false); return;
         }
@@ -570,7 +554,6 @@ async function doMemberLogin() {
     setLoader(false);
 }
 
-// --- REGISTRATION FORM & IMAGE UPLOAD ---
 function createStudentForm() {
     const c = document.getElementById('selCount').value;
     document.getElementById('totalAmt').innerText = c * 80;
@@ -642,14 +625,13 @@ async function finalSubmit() {
         await db.collection("registrations").add({
             Token: token, Amount: studentData.length * 80, Mobile: document.getElementById('memMobile').value,
             MemberName: document.getElementById('dispMName').value, MemberNo: document.getElementById('dispMNo').value,
-            Students: studentData, Status: "PENDING", Date: new Date().toLocaleDateString()
+            Students: studentData, Status: "PENDING", Date: new Date().toISOString()
         });
         showSuccess(token, studentData.length * 80);
     } catch(e) { console.error(e); alert("Registration Failed! Something went wrong."); } 
     finally { setLoader(false); }
 }
 
-// --- ADMIN & COMMITTEE LOGINS ---
 function doAdminLogin() {
     const id = document.getElementById('admID').value.toUpperCase(); const pass = document.getElementById('admPass').value; const remember = document.getElementById('admRemember').checked;
     if(id === "BATRISI" && pass === "Bat@3232") {
@@ -675,7 +657,6 @@ function checkRememberMe() {
     if(localStorage.getItem('commRemember') === 'true') { document.getElementById('commMobile').value = localStorage.getItem('commMobile'); document.getElementById('commPass').value = localStorage.getItem('commPass'); document.getElementById('commRemember').checked = true; }
 }
 
-// --- TOKEN SCANNER & PRINTING LOGIC ---
 let currentSearchedTokenData = null;
 
 async function executeTokenSearch(tokenText, containerId) {
@@ -715,7 +696,6 @@ async function executeTokenSearch(tokenText, containerId) {
         }
             
         let printBtn = `<button class="btn btn-dark w-100 mt-2 py-2 fw-bold shadow" onclick="printTokenReceipt()"><i class="bi bi-printer"></i> PRINT RECEIPT</button>`;
-        
         let badgeColor = d.Status === 'DELIVERED' ? 'success' : (d.Status === 'DECLINED' ? 'danger' : 'warning text-dark');
 
         document.getElementById(containerId).classList.remove('hidden');
@@ -796,7 +776,7 @@ function printTokenReceipt() {
             <h3 style="margin-bottom: 10px; border-bottom: 1px solid #000; display: inline-block;">Student Details (${d.Students.length})</h3>
             ${stuHtml}
             <div style="text-align: center; margin-top: 40px; font-size: 12px; border-top: 1px solid #ccc; padding-top: 10px;">Printed on: ${new Date().toLocaleString()}</div>
-            <script>window.onload = function() { window.print(); }</script>
+            <script>window.onload = function() { window.print(); }<\/script>
         </body></html>
     `);
     printWin.document.close();
@@ -815,7 +795,7 @@ async function downloadFullExcel() {
     let data = []; snap.forEach(d => {
         let r = d.data();
         r.Students.forEach((stu) => {
-            data.push({ Token: r.Token, Date: r.Date, Status: r.Status, MemberNo: r.MemberNo, MemberName: r.MemberName, Mobile: r.Mobile, StudentName: stu.StudentName, FatherName: stu.FatherName, Surname: stu.Surname, Standard: stu.Standard, School: stu.SchoolCollege, PhotoLink: stu.MarksheetURL });
+            data.push({ Token: r.Token, Date: new Date(r.Date).toLocaleDateString(), Status: r.Status, MemberNo: r.MemberNo, MemberName: r.MemberName, Mobile: r.Mobile, StudentName: stu.StudentName, FatherName: stu.FatherName, Surname: stu.Surname, Standard: stu.Standard, School: stu.SchoolCollege, PhotoLink: stu.MarksheetURL });
         });
     });
     XLSX.writeFile(XLSX.utils.book_append_sheet(XLSX.utils.book_new(), XLSX.utils.json_to_sheet(data), "Data"), "All_Registrations.xlsx");
