@@ -18,6 +18,8 @@
         .hidden { display: none !important; }
         
         input[type="text"], input[type="tel"], select { text-transform: uppercase; font-weight: 500; }
+        .password-container { position: relative; }
+        .eye-icon { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #6c757d; font-size: 1.2rem; }
         
         #loader { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.9); z-index:10000; display:none; flex-direction:column; align-items:center; justify-content:center; }
         .student-entry { background: #fff; border: 1px solid #dee2e6; padding: 15px; border-radius: 12px; margin-bottom: 10px; border-left: 5px solid var(--primary); }
@@ -55,8 +57,8 @@
             <div class="card p-4 border-top border-4 border-primary">
                 <h5 class="text-center mb-4 fw-bold">Member Notebook Registration</h5>
                 <div class="mb-3">
-                    <label class="small fw-bold">REGISTERED MOBILE NUMBER</label>
-                    <input type="tel" id="memMobile" class="form-control form-control-lg text-center" maxlength="10" placeholder="9XXXXXXXXX">
+                    <label class="small fw-bold text-muted">REGISTERED MOBILE NUMBER</label>
+                    <input type="tel" id="memMobile" class="form-control form-control-lg text-center fw-bold" maxlength="10" placeholder="Enter Mobile No">
                 </div>
                 <button class="btn btn-primary btn-lg w-100 fw-bold" onclick="doMemberLogin()">LOGIN & PROCEED</button>
             </div>
@@ -98,8 +100,18 @@
         <div class="col-md-4">
             <div class="card p-4 border-top border-4 border-danger">
                 <h5 class="text-center mb-4 text-danger fw-bold">Admin Master Access</h5>
-                <input type="text" id="admID" class="form-control mb-2" placeholder="Admin ID">
-                <input type="password" id="admPass" class="form-control mb-3" placeholder="Password">
+                <input type="text" id="admID" class="form-control mb-3" placeholder="Admin ID">
+                
+                <div class="password-container mb-2">
+                    <input type="password" id="admPass" class="form-control" placeholder="Password">
+                    <i class="bi bi-eye-slash eye-icon" onclick="togglePassword('admPass', this)"></i>
+                </div>
+
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="admRemember">
+                    <label class="form-check-label small fw-bold" for="admRemember">Remember Me</label>
+                </div>
+                
                 <button class="btn btn-danger w-100 fw-bold" onclick="doAdminLogin()">LOGIN ADMIN</button>
             </div>
         </div>
@@ -109,14 +121,14 @@
         <div class="col-md-12">
             <div class="card p-4 shadow">
                 <div class="d-flex justify-content-between border-bottom pb-3">
-                    <h5 class="text-danger fw-bold">Master Database (Static System)</h5>
+                    <h5 class="text-danger fw-bold">Master Database Panel</h5>
                     <button class="btn btn-outline-danger btn-sm" onclick="location.reload()">LOGOUT</button>
                 </div>
                 <div class="p-4 bg-light border rounded mt-3 text-center">
-                    <h6 class="fw-bold text-primary">UPLOAD MASTER CSV FILE (INSTANT)</h6>
-                    <p class="small text-muted">Format: MemberNo, Name, Native, Mobile, Address</p>
+                    <h6 class="fw-bold text-primary">UPLOAD MASTER CSV FILE (SUPER FAST)</h6>
+                    <p class="small text-danger">Format: MemberNo, Name, Native, Mobile, Address</p>
                     <input type="file" id="masterCSV" class="form-control mb-3 mx-auto" style="max-width: 400px;" accept=".csv">
-                    <button class="btn btn-primary px-5 fw-bold" onclick="uploadMasterInstant()">🚀 UPLOAD FILE (2 SECONDS)</button>
+                    <button class="btn btn-primary px-5 fw-bold" onclick="uploadMasterInstant()">🚀 UPLOAD DATA (Takes 5 Seconds)</button>
                 </div>
                 <div class="text-center mt-4">
                     <button class="btn btn-success mx-1" onclick="downloadFullExcel()">EXPORT EXCEL</button>
@@ -130,8 +142,22 @@
     <div id="comm-login-sec" class="row justify-content-center section hidden">
         <div class="col-md-4">
             <div class="card p-4 border-top border-4 border-dark">
-                <h5 class="text-center mb-4">Committee Login</h5>
-                <input type="password" id="commPass" class="form-control mb-3" placeholder="Enter Password">
+                <h5 class="text-center mb-4 fw-bold">Committee Login</h5>
+                
+                <label class="small fw-bold text-muted">COMMITTEE MOBILE NUMBER</label>
+                <input type="tel" id="commMobile" class="form-control mb-3 text-center fw-bold" maxlength="10" placeholder="Mobile No">
+                
+                <label class="small fw-bold text-muted">PASSWORD</label>
+                <div class="password-container mb-2">
+                    <input type="password" id="commPass" class="form-control text-center" placeholder="Password">
+                    <i class="bi bi-eye-slash eye-icon" onclick="togglePassword('commPass', this)"></i>
+                </div>
+
+                <div class="form-check mb-3 d-flex justify-content-center">
+                    <input class="form-check-input me-2" type="checkbox" id="commRemember">
+                    <label class="form-check-label small fw-bold" for="commRemember">Remember My Login</label>
+                </div>
+
                 <button class="btn btn-dark w-100 fw-bold" onclick="doCommitteeLogin()">LOGIN</button>
             </div>
         </div>
@@ -140,14 +166,19 @@
     <div id="comm-dash-sec" class="row section hidden">
         <div class="col-md-12">
             <div class="card p-4">
-                <h5 class="fw-bold border-bottom pb-2">Verification Panel</h5>
-                <div class="row">
+                <div class="d-flex justify-content-between border-bottom pb-2">
+                    <h5 class="fw-bold">Verification Panel</h5>
+                    <button class="btn btn-outline-dark btn-sm" onclick="location.reload()">LOGOUT</button>
+                </div>
+                <div class="row mt-3">
                     <div class="col-md-6 border-end">
                         <div id="reader" style="width: 100%;"></div>
-                        <input type="text" id="manualToken" class="form-control mt-2" placeholder="Manual Token Entry">
-                        <button class="btn btn-primary w-100 mt-2" onclick="searchByToken()">SEARCH</button>
+                        <input type="text" id="manualToken" class="form-control mt-2 text-center" placeholder="Manual Token Entry">
+                        <button class="btn btn-primary w-100 mt-2" onclick="searchByToken()">SEARCH TOKEN</button>
                     </div>
-                    <div id="verify-res" class="col-md-6 p-4 text-center"></div>
+                    <div id="verify-res" class="col-md-6 p-4 text-center d-flex flex-column justify-content-center">
+                        <p class="text-muted">Scan QR or enter token to view details.</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -179,6 +210,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
 
 <script>
+// --- FIREBASE SETUP ---
 const firebaseConfig = {
     apiKey: "AIzaSyDbZ4T8264CDQ5LSoH_4L0luB5VKQbiqkU",
     authDomain: "batrisi-latest-app.firebaseapp.com",
@@ -187,10 +219,21 @@ const firebaseConfig = {
     messagingSenderId: "175592360155",
     appId: "1:175592360155:web:ba95f9aba4558fda9d64fe"
 };
-firebase.initializeApp(firebaseConfig);
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
 const db = firebase.firestore();
 const storage = firebase.storage();
 
+// --- COMMITTEE NUMBERS LIST ---
+const committeeMobiles = [
+    "9825698298", "9825441916", "9537714100", "9824010710", "9426083001",
+    "9426084338", "9426327144", "9824313180", "9898986763", "9825580044",
+    "9924446767", "9824499844", "9898251001", "9327054179", "9374005997",
+    "9879033203", "9327513549", "9825253932", "9909902687"
+];
+
+// --- UI HELPERS ---
 function setLoader(s, t="Processing...") { 
     document.getElementById('loader').style.display = s ? 'flex' : 'none'; 
     document.getElementById('loader-text').innerText = t;
@@ -201,29 +244,82 @@ function showSection(id) {
     document.getElementById(id).classList.remove('hidden');
 }
 
-// --- ADMIN: INSTANT FILE UPLOAD ---
-async function uploadMasterInstant() {
-    const file = document.getElementById('masterCSV').files[0];
-    if(!file) return alert("Select File!");
-    
-    setLoader(true, "Uploading File (2-5 Seconds)...");
-    try {
-        // Purani file delete karke nayi upload karega
-        const ref = storage.ref('master_data/members.csv');
-        await ref.put(file);
-        alert("SUCCESS! File uploaded instantly. Members can now login.");
-    } catch(e) { alert("Upload Failed: " + e.message); }
-    setLoader(false);
+// Instagram Style Show/Hide Password
+function togglePassword(inputId, iconElement) {
+    const input = document.getElementById(inputId);
+    if (input.type === "password") {
+        input.type = "text";
+        iconElement.classList.remove("bi-eye-slash");
+        iconElement.classList.add("bi-eye");
+    } else {
+        input.type = "password";
+        iconElement.classList.remove("bi-eye");
+        iconElement.classList.add("bi-eye-slash");
+    }
 }
 
-// --- MEMBER: INSTANT CSV SEARCH ---
+// --- ADMIN: BATCH CSV UPLOAD (Takes Only 5-10 Seconds) ---
+async function uploadMasterInstant() {
+    const file = document.getElementById('masterCSV').files[0];
+    if(!file) return alert("Please Select CSV File!");
+    
+    setLoader(true, "Reading & Saving Fast Database (Please Wait 10 Sec)...");
+    
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+        try {
+            const lines = e.target.result.split(/\r?\n/);
+            
+            let batch = db.batch();
+            let count = 0;
+            let promises = [];
+
+            for(let i=0; i<lines.length; i++) {
+                const d = lines[i].split(",");
+                // Agar mobile number exist karta hai tabhi save kare
+                if(d.length >= 4 && d[3] && d[3].trim().length >= 10) {
+                    const mobileNum = d[3].trim();
+                    // Mobile number ko hi Document ID bana diya hai, iss se search 1 millisecond me hoga!
+                    const docRef = db.collection("master_members").doc(mobileNum);
+                    
+                    batch.set(docRef, {
+                        mno: d[0].trim(),
+                        name: d[1].trim(),
+                        native: d[2].trim(),
+                        mobile: mobileNum,
+                        addr: d[4] ? d[4].trim() : ""
+                    });
+                    
+                    count++;
+                    // Firestore ek baar me sirf 500 data save kar sakta hai, toh hum Batch banayenge
+                    if(count === 450) {
+                        promises.push(batch.commit());
+                        batch = db.batch();
+                        count = 0;
+                    }
+                }
+            }
+            if(count > 0) promises.push(batch.commit()); // bacha hua data commit karein
+            
+            await Promise.all(promises);
+            
+            alert(`SUCCESS! Data Uploaded Instantly. System is Ready for Members!`);
+        } catch(err) { 
+            alert("Upload Error: " + err.message); 
+        }
+        setLoader(false);
+    };
+    reader.readAsText(file);
+}
+
+// --- MEMBER: INSTANT LOGIN FIX ---
 async function doMemberLogin() {
     const mob = document.getElementById('memMobile').value.trim();
-    if(mob.length < 10) return alert("Enter Mobile!");
-    setLoader(true, "Verifying Mobile...");
+    if(mob.length < 10) return alert("Enter valid 10-digit Mobile Number!");
+    setLoader(true, "Verifying Details...");
 
     try {
-        // 1. Pehle check karein ki Registration ho toh nahi chuka
+        // 1. Check if token already exists for this mobile
         const reg = await db.collection("registrations").where("Mobile", "==", mob).get();
         if(!reg.empty) {
             const d = reg.docs[0].data();
@@ -231,31 +327,22 @@ async function doMemberLogin() {
             setLoader(false); return;
         }
 
-        // 2. CSV File download karke search karein (Super Fast)
-        const url = await storage.ref('master_data/members.csv').getDownloadURL();
-        const resp = await fetch(url);
-        const text = await resp.text();
-        const lines = text.split(/\r?\n/);
+        // 2. Fetch directly from Master Members (Lightning Fast)
+        const docRef = await db.collection("master_members").doc(mob).get();
         
-        let found = null;
-        for(let line of lines) {
-            const d = line.split(",");
-            if(d.length >= 4 && d[3].trim() === mob) {
-                found = { mno: d[0], name: d[1], native: d[2], addr: d[4] || "" };
-                break;
-            }
-        }
-
-        if(found) {
+        if(docRef.exists) {
+            const found = docRef.data();
             document.getElementById('dispMNo').value = found.mno;
             document.getElementById('dispMName').value = found.name;
             document.getElementById('dispNative').value = found.native;
             document.getElementById('dispAddr').value = found.addr;
             showSection('reg-form-sec');
         } else {
-            alert("Mobile No not found in Master List!");
+            alert("Mobile Number NOT FOUND in List! Check number or contact Admin.");
         }
-    } catch(e) { alert("Error: Make sure admin uploaded the CSV file."); }
+    } catch(e) { 
+        alert("System Error: " + e.message); 
+    }
     setLoader(false);
 }
 
@@ -300,30 +387,103 @@ async function finalSubmit() {
     setLoader(false);
 }
 
-// --- REMAINING UTILS ---
+// --- ADMIN LOGIN & REMEMBER ME ---
 function doAdminLogin() {
-    if(document.getElementById('admID').value.toUpperCase()==="BATRISI" && document.getElementById('admPass').value==="Bat@3232") showSection('admin-dash-sec');
-    else alert("Wrong Pass");
+    const id = document.getElementById('admID').value.toUpperCase();
+    const pass = document.getElementById('admPass').value;
+    const remember = document.getElementById('admRemember').checked;
+
+    if(id === "BATRISI" && pass === "Bat@3232") {
+        if(remember) {
+            localStorage.setItem('admID', id);
+            localStorage.setItem('admPass', pass);
+            localStorage.setItem('admRemember', 'true');
+        } else {
+            localStorage.removeItem('admID');
+            localStorage.removeItem('admPass');
+            localStorage.removeItem('admRemember');
+        }
+        showSection('admin-dash-sec');
+    } else {
+        alert("Wrong Admin Credentials");
+    }
 }
 
+// --- COMMITTEE LOGIN & REMEMBER ME ---
 function doCommitteeLogin() {
-    if(document.getElementById('commPass').value==="Bat@3232") {
+    const commMobile = document.getElementById('commMobile').value.trim();
+    const commPass = document.getElementById('commPass').value;
+    const remember = document.getElementById('commRemember').checked;
+
+    if(!committeeMobiles.includes(commMobile)) {
+        return alert("Access Denied! Your mobile number is not in the Committee List.");
+    }
+    
+    if(commPass === "Bat@3232") {
+        if(remember) {
+            localStorage.setItem('commMobile', commMobile);
+            localStorage.setItem('commPass', commPass);
+            localStorage.setItem('commRemember', 'true');
+        } else {
+            localStorage.removeItem('commMobile');
+            localStorage.removeItem('commPass');
+            localStorage.removeItem('commRemember');
+        }
         showSection('comm-dash-sec');
         new Html5Qrcode("reader").start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (t) => searchByToken(t));
-    } else alert("Wrong Pass");
+    } else {
+        alert("Wrong Password!");
+    }
 }
 
+// Check saved logins on Page Load
+function checkRememberMe() {
+    // Admin Check
+    if(localStorage.getItem('admRemember') === 'true') {
+        document.getElementById('admID').value = localStorage.getItem('admID');
+        document.getElementById('admPass').value = localStorage.getItem('admPass');
+        document.getElementById('admRemember').checked = true;
+    }
+    // Committee Check
+    if(localStorage.getItem('commRemember') === 'true') {
+        document.getElementById('commMobile').value = localStorage.getItem('commMobile');
+        document.getElementById('commPass').value = localStorage.getItem('commPass');
+        document.getElementById('commRemember').checked = true;
+    }
+}
+
+// Scanner Actions
 async function searchByToken(tText = null) {
     const t = tText || document.getElementById('manualToken').value.toUpperCase();
+    if(!t) return;
+    
     const res = await db.collection("registrations").where("Token", "==", t).get();
-    if(res.empty) return alert("Not Found");
+    if(res.empty) {
+        document.getElementById('verify-res').innerHTML = `<h5 class="text-danger fw-bold">Token Not Found</h5>`;
+        return;
+    }
     const d = res.docs[0].data();
-    document.getElementById('verify-res').innerHTML = `<h5>${d.MemberName}</h5><p>Amount: ₹${d.Amount}</p><button class="btn btn-primary w-100" onclick="markDelivered('${res.docs[0].id}')">MARK DELIVERED</button>`;
+    
+    let btnHtml = "";
+    if(d.Status === "DELIVERED") {
+        btnHtml = `<button class="btn btn-success w-100 mt-3" disabled>ALREADY DELIVERED</button>`;
+    } else {
+        btnHtml = `<button class="btn btn-primary w-100 mt-3 shadow" onclick="markDelivered('${res.docs[0].id}')">MARK AS DELIVERED</button>`;
+    }
+    
+    document.getElementById('verify-res').innerHTML = `
+        <h5 class="fw-bold text-primary">${d.MemberName}</h5>
+        <p class="mb-1">Mobile: ${d.Mobile}</p>
+        <p class="mb-1">Students: ${d.Students.length}</p>
+        <h4 class="text-danger fw-bold mt-2">Amount: ₹${d.Amount}</h4>
+        ${btnHtml}
+    `;
 }
 
 async function markDelivered(id) {
     await db.collection("registrations").doc(id).update({Status: "DELIVERED"});
-    alert("Updated!");
+    alert("Books Marked as Delivered!");
+    searchByToken(); // refresh details
 }
 
 function showSuccess(t, a) {
@@ -334,17 +494,12 @@ function showSuccess(t, a) {
     new QRCode(document.getElementById("qrcode"), { text: t, width: 160, height: 160 });
 }
 
-function checkRememberMe() {
-    if(localStorage.getItem('admID')) {
-        document.getElementById('admID').value = localStorage.getItem('admID');
-        document.getElementById('admPass').value = localStorage.getItem('admPass');
-    }
-}
 async function downloadFullExcel() {
     const snap = await db.collection("registrations").get();
     let data = []; snap.forEach(d => data.push(d.data()));
     XLSX.writeFile(XLSX.utils.book_append_sheet(XLSX.utils.book_new(), XLSX.utils.json_to_sheet(data), "Data"), "Report.xlsx");
 }
+
 async function exportFullPDF() {
     const doc = new jspdf.jsPDF();
     const snap = await db.collection("registrations").get();
