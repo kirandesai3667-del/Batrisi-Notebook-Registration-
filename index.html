@@ -391,8 +391,7 @@ async function loadStatistics() {
             const data = doc.data();
             const id = doc.id;
             
-            // If data is old schema (Students array) skip or handle. Writing for new schema:
-            if(!data.Student) return; 
+            if(!data.Student) return; // ignore old data
 
             totalMem++; // Each document is 1 student form now
             totalStu++;
@@ -603,7 +602,7 @@ async function updateMobileData() {
     setLoader(false);
 }
 
-// NEW MEMBER DASHBOARD LOGIN SYSTEM
+// FIXED: MEMBER DASHBOARD LOGIN SYSTEM (Removed orderBy to fix Index Error)
 async function doMemberLogin() {
     const mob = document.getElementById('memMobile').value.trim();
     if(mob.length < 10) return alert("Enter valid 10-digit Mobile Number!");
@@ -618,13 +617,19 @@ async function doMemberLogin() {
             setLoader(false); return;
         }
 
-        const reg = await db.collection("registrations").where("Mobile", "==", mob).orderBy("TokenId", "desc").get();
+        // Removed orderBy("TokenId", "desc") to prevent Firebase Composite Index Error
+        const reg = await db.collection("registrations").where("Mobile", "==", mob).get();
         
         if(!reg.empty) {
+            let records = [];
+            reg.forEach(doc => records.push(doc.data()));
+            
+            // Sort data manually using JavaScript logic (Client-side sorting)
+            records.sort((a, b) => b.TokenId - a.TokenId);
+
             let html = "";
-            reg.forEach(doc => {
-                let d = doc.data();
-                if(!d.Student) return; // ignore old data
+            records.forEach(d => {
+                if(!d.Student) return; // ignore old data structure
                 
                 let stuName = `<span class="text-primary fw-bold">${d.Student.StudentName} ${d.Student.Surname}</span> <span class="text-muted small">(Std: ${d.Student.Standard})</span>`;
                 let badge = d.Status === 'DELIVERED' ? 'success' : (d.Status === 'DECLINED' ? 'danger' : 'warning text-dark');
@@ -991,13 +996,6 @@ async function downloadFullExcel() {
     setLoader(false);
 }
 
-async function exportFullPDF() {
-    const doc = new jspdf.jsPDF();
-    const snap = await db.collection("registrations").get();
-    let body = []; snap.forEach(d => { const r = d.data(); body.push([r.Token, r.MemberName, r.Mobile, 1, r.Amount, r.Status]); });
-    doc.autoTable({ head: [['Token', 'Name', 'Mobile', 'Kids', 'Amt', 'Status']], body: body });
-    doc.save("Report.pdf");
-}
 </script>
 </body>
 </html>
