@@ -29,6 +29,12 @@
         .stat-members { background: #007bff; }
         .stat-students { background: #fd7e14; }
         .stat-delivered { background: #28a745; }
+
+        .details-scroll { max-height: 400px; overflow-y: auto; overflow-x: hidden; }
+        .details-scroll::-webkit-scrollbar { width: 6px; }
+        .details-scroll::-webkit-scrollbar-thumb { background: #ccc; border-radius: 10px; }
+        
+        .table-action-btn { padding: 2px 8px; font-size: 14px; margin: 2px; }
     </style>
 </head>
 <body onload="checkRememberMe()">
@@ -136,12 +142,39 @@
                     <div class="col-md-4"><div class="stat-box stat-students"><h6 class="mb-1">Total Students</h6><h2 class="m-0 fw-bold adm-students-count">0</h2></div></div>
                     <div class="col-md-4"><div class="stat-box stat-delivered"><h6 class="mb-1">Books Delivered</h6><h2 class="m-0 fw-bold adm-delivered-count">0</h2></div></div>
                 </div>
+
+                <!-- ALL RECORDS MANAGEMENT (Search, Approve, Decline, Delete) -->
+                <div class="mt-4 p-3 border rounded bg-white shadow-sm">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="fw-bold text-primary m-0"><i class="bi bi-list-check"></i> MANAGE REGISTRATIONS</h6>
+                        <input type="text" id="adminRecordSearch" onkeyup="filterRecords('adminRecordSearch', 'admin-table-body')" class="form-control w-50" placeholder="Search Mobile No or MNO...">
+                    </div>
+                    <div class="table-responsive details-scroll border">
+                        <table class="table table-bordered table-hover text-center align-middle m-0" style="font-size: 13px;">
+                            <thead class="table-dark sticky-top">
+                                <tr>
+                                    <th>Token</th><th>MNO</th><th>Mobile</th><th>Name</th><th>Status</th><th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-table-body">
+                                <tr><td colspan="6" class="text-muted">Loading records...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
                 
-                <div class="p-4 bg-light border rounded mt-3 text-center">
-                    <h6 class="fw-bold text-primary">⚡ 1-SECOND INSTANT UPLOAD CSV</h6>
-                    <p class="small text-danger">Format: MemberNo, Name, Native, Mobile, Address</p>
-                    <input type="file" id="masterCSV" class="form-control mb-3 mx-auto" style="max-width: 400px;" accept=".csv">
-                    <button class="btn btn-primary px-5 fw-bold" onclick="uploadMasterInstant()">🚀 UPLOAD FILE (SUPER FAST)</button>
+                <!-- NEW: ADMIN TOKEN SEARCH & PRINT -->
+                <div class="p-4 bg-white border border-primary rounded mt-4 shadow-sm">
+                    <h6 class="fw-bold text-primary border-bottom pb-2 mb-3"><i class="bi bi-search"></i> SEARCH & PRINT TOKEN DETAILS</h6>
+                    <div class="row g-2 align-items-center">
+                        <div class="col-md-8">
+                            <input type="text" id="admSearchTokenInput" class="form-control fw-bold" placeholder="Enter Token Number (e.g., BT1234)">
+                        </div>
+                        <div class="col-md-4">
+                            <button class="btn btn-primary w-100 fw-bold text-white" onclick="searchTokenAdmin()">SEARCH TOKEN</button>
+                        </div>
+                    </div>
+                    <div id="adm-token-res" class="mt-3 hidden bg-light p-3 rounded border"></div>
                 </div>
 
                 <!-- Update Mobile -->
@@ -156,6 +189,12 @@
                         </div>
                     </div>
                     <div id="update-mob-res" class="mt-3 hidden bg-light p-3 rounded border"></div>
+                </div>
+
+                <div class="p-4 bg-light border rounded mt-4 text-center">
+                    <h6 class="fw-bold text-dark">⚡ INSTANT UPLOAD MASTER CSV</h6>
+                    <input type="file" id="masterCSV" class="form-control mb-3 mx-auto" style="max-width: 400px;" accept=".csv">
+                    <button class="btn btn-dark px-5 fw-bold" onclick="uploadMasterInstant()">🚀 UPLOAD FILE</button>
                 </div>
 
                 <div class="text-center mt-4 border-top pt-3">
@@ -208,30 +247,27 @@
                         <input type="text" id="manualToken" class="form-control mt-2 text-center fw-bold" placeholder="Manual Token Entry">
                         <button class="btn btn-primary w-100 mt-2" onclick="searchByToken()">SEARCH TOKEN</button>
                     </div>
-                    <div id="verify-res" class="col-md-7 p-4 text-center d-flex flex-column justify-content-center">
-                        <p class="text-muted">Scan QR or enter token to view details.</p>
+                    <div id="verify-res" class="col-md-7 p-3 text-center d-flex flex-column justify-content-center details-scroll bg-light rounded">
+                        <p class="text-muted m-auto">Scan QR or enter token to view full details here.</p>
                     </div>
                 </div>
 
-                <!-- Delivered Records Section -->
+                <!-- ALL RECORDS MANAGEMENT (Committee) -->
                 <div class="mt-4 pt-3 border-top">
                     <div class="d-flex justify-content-between align-items-center mb-2">
-                        <h5 class="fw-bold text-success"><i class="bi bi-check-circle-fill"></i> Delivered Records</h5>
-                        <button class="btn btn-success btn-sm fw-bold" onclick="downloadCommitteeExcel()"><i class="bi bi-file-excel"></i> EXPORT EXCEL</button>
+                        <h5 class="fw-bold text-dark m-0"><i class="bi bi-list-ul"></i> All Registrations</h5>
+                        <button class="btn btn-success btn-sm fw-bold" onclick="downloadFullExcel()"><i class="bi bi-file-excel"></i> EXPORT EXCEL</button>
                     </div>
-                    <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
-                        <table class="table table-bordered table-striped text-center align-middle" style="font-size: 14px;">
+                    <input type="text" id="commRecordSearch" onkeyup="filterRecords('commRecordSearch', 'comm-table-body')" class="form-control mb-2" placeholder="Search Mobile No or Member No...">
+                    <div class="table-responsive details-scroll border">
+                        <table class="table table-bordered table-hover text-center align-middle m-0" style="font-size: 13px;">
                             <thead class="table-dark sticky-top">
                                 <tr>
-                                    <th>Token</th>
-                                    <th>MNO</th>
-                                    <th>Member Name</th>
-                                    <th>Students</th>
-                                    <th>Amt</th>
+                                    <th>Token</th><th>MNO</th><th>Mobile</th><th>Name</th><th>Status</th><th>Actions</th>
                                 </tr>
                             </thead>
-                            <tbody id="delivered-table-body">
-                                <tr><td colspan="5" class="text-muted">Loading records...</td></tr>
+                            <tbody id="comm-table-body">
+                                <tr><td colspan="6" class="text-muted">Loading records...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -253,9 +289,25 @@
         </div>
     </div>
 
+    <!-- 6. DECLINED MESSAGE SCREEN -->
+    <div id="declined-sec" class="row justify-content-center section hidden">
+        <div class="col-md-6 text-center">
+            <div class="card p-5 border-danger shadow-lg">
+                <h2 class="text-danger fw-bold"><i class="bi bi-x-octagon-fill"></i> APPLICATION DECLINED</h2>
+                <h6 class="mt-3 text-dark">Your notebook registration form has been rejected by the committee.</h6>
+                <div class="bg-light p-3 border border-danger text-danger mt-3 fw-bold rounded text-start">
+                    <u>Reason for Rejection:</u><br>
+                    <span id="decReasonText" class="fs-5"></span>
+                </div>
+                <p class="mt-3 text-muted small">Please contact the administration or wait for them to delete your previous record before you can apply again.</p>
+                <button class="btn btn-danger btn-lg mt-3" onclick="location.reload()">GO BACK</button>
+            </div>
+        </div>
+    </div>
+
 </div>
 
-<!-- Firebase & Libraries (Firebase Storage Removed) -->
+<!-- Firebase & Libraries -->
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 <script src="https://unpkg.com/html5-qrcode"></script>
@@ -265,7 +317,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
 
 <script>
-// --- IMGBB FREE API KEY --- (Applied Successfully)
+// --- IMGBB FREE API KEY ---
 const IMGBB_API_KEY = "4654a367d70c05d4433a54f79d8a600d"; 
 
 // --- FIREBASE SETUP ---
@@ -298,71 +350,130 @@ function showSection(id) {
 
 function togglePassword(inputId, iconElement) {
     const input = document.getElementById(inputId);
-    if (input.type === "password") {
-        input.type = "text";
-        iconElement.classList.remove("bi-eye-slash");
-        iconElement.classList.add("bi-eye");
-    } else {
-        input.type = "password";
-        iconElement.classList.remove("bi-eye");
-        iconElement.classList.add("bi-eye-slash");
-    }
+    if (input.type === "password") { input.type = "text"; iconElement.classList.replace("bi-eye-slash", "bi-eye"); } 
+    else { input.type = "password"; iconElement.classList.replace("bi-eye", "bi-eye-slash"); }
 }
 
-let allDeliveredData = [];
-
+// --- LOAD STATISTICS & RECORDS TABLE ---
 async function loadStatistics() {
     try {
-        const snap = await db.collection("registrations").get();
+        const snap = await db.collection("registrations").orderBy("Date", "desc").get();
         let totalMem = 0; let totalStu = 0; let totalDel = 0;
-        let tableHTML = ""; allDeliveredData = [];
+        let tableHTML = ""; 
 
         snap.forEach(doc => {
             const data = doc.data();
+            const id = doc.id;
+            
             totalMem++;
             totalStu += data.Students ? data.Students.length : 0;
-            if(data.Status === "DELIVERED") {
-                totalDel++;
-                allDeliveredData.push(data);
-                tableHTML += `<tr>
-                    <td class="fw-bold">${data.Token}</td>
-                    <td>${data.MemberNo}</td>
-                    <td>${data.MemberName}</td>
-                    <td>${data.Students.length}</td>
-                    <td class="text-success fw-bold">₹${data.Amount}</td>
-                </tr>`;
-            }
+            if(data.Status === "DELIVERED") totalDel++;
+
+            // Status Badge Logic
+            let badgeColor = "warning text-dark"; // For PENDING
+            if(data.Status === "DELIVERED") badgeColor = "success";
+            if(data.Status === "DECLINED") badgeColor = "danger";
+
+            // Action Buttons
+            let actionBtns = `
+                <button class="btn btn-success table-action-btn" onclick="executeApprove('${id}')" title="Approve"><i class="bi bi-check-lg"></i></button>
+                <button class="btn btn-danger table-action-btn" onclick="executeDecline('${id}')" title="Decline"><i class="bi bi-x-lg"></i></button>
+                <button class="btn btn-dark table-action-btn" onclick="executeDelete('${id}')" title="Delete"><i class="bi bi-trash"></i></button>
+            `;
+
+            tableHTML += `<tr class="record-row">
+                <td class="fw-bold">${data.Token}</td>
+                <td class="search-mno">${data.MemberNo}</td>
+                <td class="search-mob">${data.Mobile}</td>
+                <td style="max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${data.MemberName}</td>
+                <td><span class="badge bg-${badgeColor}">${data.Status}</span></td>
+                <td>${actionBtns}</td>
+            </tr>`;
         });
 
+        // Update counters
         document.querySelectorAll('.adm-members-count').forEach(e => e.innerText = totalMem);
         document.querySelectorAll('.adm-students-count').forEach(e => e.innerText = totalStu);
         document.querySelectorAll('.adm-delivered-count').forEach(e => e.innerText = totalDel);
 
-        const tbody = document.getElementById('delivered-table-body');
-        if(tbody) tbody.innerHTML = tableHTML || `<tr><td colspan="5" class="text-muted">No records found</td></tr>`;
+        // Update Tables
+        const admTbody = document.getElementById('admin-table-body');
+        const commTbody = document.getElementById('comm-table-body');
+        const finalHTML = tableHTML || `<tr><td colspan="6" class="text-muted">No records found</td></tr>`;
         
+        if(admTbody) admTbody.innerHTML = finalHTML;
+        if(commTbody) commTbody.innerHTML = finalHTML;
+
     } catch(e) { console.error("Stats error", e); }
 }
 
+// --- FILTER/SEARCH TABLE RECORDS ---
+function filterRecords(inputId, tableBodyId) {
+    let input = document.getElementById(inputId).value.toUpperCase();
+    let rows = document.getElementById(tableBodyId).getElementsByClassName('record-row');
+    
+    for (let i = 0; i < rows.length; i++) {
+        let mnoCol = rows[i].getElementsByClassName('search-mno')[0].innerText.toUpperCase();
+        let mobCol = rows[i].getElementsByClassName('search-mob')[0].innerText.toUpperCase();
+        
+        if (mnoCol.includes(input) || mobCol.includes(input)) {
+            rows[i].style.display = "";
+        } else {
+            rows[i].style.display = "none";
+        }
+    }
+}
+
+// --- RECORD ACTION FUNCTIONS (Approve, Decline, Delete) ---
+async function executeApprove(id) {
+    if(!confirm("Are you sure you want to APPROVE (Mark as Delivered) this record?")) return;
+    setLoader(true, "Approving...");
+    await db.collection("registrations").doc(id).update({Status: "DELIVERED"});
+    alert("Record Approved successfully!");
+    setLoader(false);
+    loadStatistics();
+}
+
+async function executeDecline(id) {
+    let reason = prompt("Please enter the REASON for declining this application (e.g., Invalid Marksheet):");
+    if(reason === null || reason.trim() === "") return alert("Action Cancelled. Reason is mandatory to decline!");
+    
+    setLoader(true, "Declining...");
+    await db.collection("registrations").doc(id).update({
+        Status: "DECLINED",
+        DeclineReason: reason.trim()
+    });
+    alert("Record Declined successfully. Member will see the reason.");
+    setLoader(false);
+    loadStatistics();
+}
+
+async function executeDelete(id) {
+    if(!confirm("WARNING! Are you sure you want to PERMANENTLY DELETE this record? The member will have to apply again.")) return;
+    setLoader(true, "Deleting...");
+    await db.collection("registrations").doc(id).delete();
+    alert("Record Deleted successfully!");
+    setLoader(false);
+    loadStatistics();
+}
+
+// --- UPLOAD MASTER CSV ---
 async function uploadMasterInstant() {
     const file = document.getElementById('masterCSV').files[0];
     if(!file) return alert("Please Select CSV File!");
     
     setLoader(true, "Packing & Uploading Instantly...", "Uploading in 1 Second!");
-    
     const reader = new FileReader();
     reader.onload = async function(e) {
         try {
             const lines = e.target.result.split(/\r?\n/);
             let membersArray = [];
-
             for(let i=0; i<lines.length; i++) {
                 const d = lines[i].split(",");
                 const mnoClean = d[0] ? d[0].replace(/['"]/g, '').trim().toUpperCase() : "";
                 if(mnoClean && d.length >= 2) {
                     membersArray.push({
-                        mno: mnoClean,
-                        name: d[1] ? d[1].replace(/['"]/g, '').trim() : "",
+                        mno: mnoClean, name: d[1] ? d[1].replace(/['"]/g, '').trim() : "",
                         native: d[2] ? d[2].replace(/['"]/g, '').trim() : "",
                         mobile: d[3] ? d[3].replace(/['"]/g, '').trim() : "",
                         addr: d[4] ? d[4].replace(/['"]/g, '').trim() : ""
@@ -377,6 +488,7 @@ async function uploadMasterInstant() {
     reader.readAsText(file);
 }
 
+// --- UPDATE MOBILE NUMBER LOGIC ---
 let currentMnoToUpdate = null;
 let cachedDBData = null;
 
@@ -389,12 +501,10 @@ async function fetchMasterDB() {
 async function searchMemberByMno() {
     const mno = document.getElementById('searchMno').value.replace(/['"]/g, '').trim().toUpperCase();
     if(!mno) return alert("Enter Member Number!");
-    
     setLoader(true, "Searching Fast Database...", "");
     try {
         const members = await fetchMasterDB();
         const foundUser = members.find(m => m.mno === mno);
-        
         if(!foundUser) {
             alert("Member Number '" + mno + "' not found! Make sure you entered it correctly.");
             document.getElementById('update-mob-res').classList.add('hidden');
@@ -414,7 +524,6 @@ async function searchMemberByMno() {
 async function updateMobileData() {
     const newMob = document.getElementById('newMobileInput').value.trim();
     if(newMob.length !== 10) return alert("Enter valid 10-digit mobile number!");
-    
     setLoader(true, "Updating Mobile Number Instantly...", "");
     try {
         let userIndex = cachedDBData.findIndex(m => m.mno === currentMnoToUpdate);
@@ -426,22 +535,30 @@ async function updateMobileData() {
     setLoader(false);
 }
 
+// --- MEMBER LOGIN (Added Decline Logic) ---
 async function doMemberLogin() {
     const mob = document.getElementById('memMobile').value.trim();
     if(mob.length < 10) return alert("Enter valid 10-digit Mobile Number!");
     setLoader(true, "Verifying Details Fast...", "");
-
     try {
         const reg = await db.collection("registrations").where("Mobile", "==", mob).get();
         if(!reg.empty) {
-            const d = reg.docs[0].data();
-            showSuccess(d.Token, d.Amount);
+            const d = reg.docs[0].data(); 
+            
+            // IF DECLINED: Show Decline Error Page
+            if(d.Status === "DECLINED") {
+                showSection('declined-sec');
+                document.getElementById('decReasonText').innerText = d.DeclineReason || "Reason not provided by committee.";
+                setLoader(false); return;
+            }
+            
+            // IF OK (PENDING/DELIVERED): Show Token/QR
+            showSuccess(d.Token, d.Amount); 
             setLoader(false); return;
         }
 
         const members = await fetchMasterDB();
         const found = members.find(m => m.mobile === mob);
-        
         if(found) {
             document.getElementById('dispMNo').value = found.mno;
             document.getElementById('dispMName').value = found.name;
@@ -453,11 +570,11 @@ async function doMemberLogin() {
     setLoader(false);
 }
 
+// --- REGISTRATION FORM & IMAGE UPLOAD ---
 function createStudentForm() {
     const c = document.getElementById('selCount').value;
     document.getElementById('totalAmt').innerText = c * 80;
-    const list = document.getElementById('student-list');
-    list.innerHTML = "";
+    const list = document.getElementById('student-list'); list.innerHTML = "";
     for(let i=1; i<=c; i++) {
         list.innerHTML += `
         <div class="student-entry">
@@ -474,11 +591,9 @@ function createStudentForm() {
     }
 }
 
-// Compressor Logic
 async function compressImage(file) {
     return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
+        const reader = new FileReader(); reader.readAsDataURL(file);
         reader.onload = event => {
             const img = new Image(); img.src = event.target.result;
             img.onload = () => {
@@ -493,73 +608,50 @@ async function compressImage(file) {
     });
 }
 
-// 100% FREE IMGBB API UPLOAD (Bypass Firebase Storage)
 async function finalSubmit() {
     const entries = document.querySelectorAll('.student-entry');
     const uploadPromises = [];
-    
     for(let entry of entries) {
         const file = entry.querySelector('.s-file').files[0];
         const sName = entry.querySelector('.s-name').value.toUpperCase();
         if(!file || !sName) return alert("Please fill Student Name and Upload Photo for all students!");
     }
-
     setLoader(true, "Saving securely to Cloud...", "Uploading Marksheets. Please wait...");
-    
     try {
         for(let entry of entries) {
             const file = entry.querySelector('.s-file').files[0];
             const sName = entry.querySelector('.s-name').value.toUpperCase();
-            
             const compressedBlob = await compressImage(file);
             
-            // Upload to ImgBB Free Server
-            const formData = new FormData();
-            formData.append("image", compressedBlob, sName+".jpg");
-            
-            const task = fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
-                method: 'POST',
-                body: formData
-            }).then(response => response.json())
-              .then(result => {
+            const formData = new FormData(); formData.append("image", compressedBlob, sName+".jpg");
+            const task = fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: 'POST', body: formData })
+                .then(response => response.json())
+                .then(result => {
                   if(result.success) {
                       return {
-                          StudentName: sName,
-                          FatherName: entry.querySelector('.s-fname').value.toUpperCase(),
-                          Surname: entry.querySelector('.s-surname').value.toUpperCase(),
-                          Standard: entry.querySelector('.s-std').value.toUpperCase(),
-                          SchoolCollege: entry.querySelector('.s-school').value.toUpperCase(),
-                          MarksheetURL: result.data.url // Free Public Link
+                          StudentName: sName, FatherName: entry.querySelector('.s-fname').value.toUpperCase(),
+                          Surname: entry.querySelector('.s-surname').value.toUpperCase(), Standard: entry.querySelector('.s-std').value.toUpperCase(),
+                          SchoolCollege: entry.querySelector('.s-school').value.toUpperCase(), MarksheetURL: result.data.url
                       };
                   } else throw new Error("Image Upload Failed");
               });
-              
             uploadPromises.push(task);
         }
-        
         const studentData = await Promise.all(uploadPromises);
-        
-        // Save text data to Free Firebase Firestore
         const token = "BT" + Math.floor(1000 + Math.random() * 9000);
         await db.collection("registrations").add({
             Token: token, Amount: studentData.length * 80, Mobile: document.getElementById('memMobile').value,
             MemberName: document.getElementById('dispMName').value, MemberNo: document.getElementById('dispMNo').value,
             Students: studentData, Status: "PENDING", Date: new Date().toLocaleDateString()
         });
-        
         showSuccess(token, studentData.length * 80);
-    } catch(e) { 
-        console.error(e);
-        alert("Registration Failed! Make sure you added correct ImgBB API key.");
-    } finally {
-        setLoader(false);
-    }
+    } catch(e) { console.error(e); alert("Registration Failed! Something went wrong."); } 
+    finally { setLoader(false); }
 }
 
+// --- ADMIN & COMMITTEE LOGINS ---
 function doAdminLogin() {
-    const id = document.getElementById('admID').value.toUpperCase();
-    const pass = document.getElementById('admPass').value;
-    const remember = document.getElementById('admRemember').checked;
+    const id = document.getElementById('admID').value.toUpperCase(); const pass = document.getElementById('admPass').value; const remember = document.getElementById('admRemember').checked;
     if(id === "BATRISI" && pass === "Bat@3232") {
         if(remember) { localStorage.setItem('admID', id); localStorage.setItem('admPass', pass); localStorage.setItem('admRemember', 'true'); } 
         else { localStorage.removeItem('admID'); localStorage.removeItem('admPass'); localStorage.removeItem('admRemember'); }
@@ -568,9 +660,7 @@ function doAdminLogin() {
 }
 
 function doCommitteeLogin() {
-    const commMobile = document.getElementById('commMobile').value.trim();
-    const commPass = document.getElementById('commPass').value;
-    const remember = document.getElementById('commRemember').checked;
+    const commMobile = document.getElementById('commMobile').value.trim(); const commPass = document.getElementById('commPass').value; const remember = document.getElementById('commRemember').checked;
     if(!committeeMobiles.includes(commMobile)) return alert("Access Denied! Mobile not in Committee List.");
     if(commPass === "Bat@3232") {
         if(remember) { localStorage.setItem('commMobile', commMobile); localStorage.setItem('commPass', commPass); localStorage.setItem('commRemember', 'true'); } 
@@ -581,28 +671,135 @@ function doCommitteeLogin() {
 }
 
 function checkRememberMe() {
-    if(localStorage.getItem('admRemember') === 'true') {
-        document.getElementById('admID').value = localStorage.getItem('admID'); document.getElementById('admPass').value = localStorage.getItem('admPass'); document.getElementById('admRemember').checked = true;
-    }
-    if(localStorage.getItem('commRemember') === 'true') {
-        document.getElementById('commMobile').value = localStorage.getItem('commMobile'); document.getElementById('commPass').value = localStorage.getItem('commPass'); document.getElementById('commRemember').checked = true;
-    }
+    if(localStorage.getItem('admRemember') === 'true') { document.getElementById('admID').value = localStorage.getItem('admID'); document.getElementById('admPass').value = localStorage.getItem('admPass'); document.getElementById('admRemember').checked = true; }
+    if(localStorage.getItem('commRemember') === 'true') { document.getElementById('commMobile').value = localStorage.getItem('commMobile'); document.getElementById('commPass').value = localStorage.getItem('commPass'); document.getElementById('commRemember').checked = true; }
 }
 
-async function searchByToken(tText = null) {
+// --- TOKEN SCANNER & PRINTING LOGIC ---
+let currentSearchedTokenData = null;
+
+async function executeTokenSearch(tokenText, containerId) {
+    if(!tokenText) return alert("Please enter a Token Number!");
+    setLoader(true, "Fetching Full Details...", "");
+    
+    try {
+        const res = await db.collection("registrations").where("Token", "==", tokenText).get();
+        if(res.empty) {
+            document.getElementById(containerId).classList.remove('hidden');
+            document.getElementById(containerId).innerHTML = `<h5 class="text-danger fw-bold mt-3"><i class="bi bi-x-circle"></i> Token Not Found!</h5>`;
+            setLoader(false); return;
+        }
+        
+        const docId = res.docs[0].id;
+        const d = res.docs[0].data();
+        currentSearchedTokenData = d;
+        
+        let stuHtml = `<div class="mt-3 text-start"><h6 class="fw-bold border-bottom border-secondary pb-1 text-dark">STUDENT DETAILS:</h6>`;
+        d.Students.forEach((s, i) => {
+            stuHtml += `
+                <div class="p-2 border border-secondary rounded bg-white mb-2 shadow-sm" style="font-size: 0.9rem;">
+                    <div class="fw-bold text-primary">${i+1}. ${s.StudentName} ${s.FatherName} ${s.Surname}</div>
+                    <div class="text-muted mb-1">Std: <b>${s.Standard}</b> | School: <b>${s.SchoolCollege}</b></div>
+                    <a href="${s.MarksheetURL}" target="_blank" class="btn btn-sm btn-outline-primary w-100 fw-bold"><i class="bi bi-image"></i> VIEW MARKSHEET / PHOTO</a>
+                </div>`;
+        });
+        stuHtml += `</div>`;
+        
+        let actionBtn = "";
+        if(d.Status === "DELIVERED") {
+            actionBtn = `<button class="btn btn-success w-100 py-2 fw-bold" disabled><i class="bi bi-check-circle-fill"></i> ALREADY DELIVERED / APPROVED</button>`;
+        } else if (d.Status === "DECLINED") {
+            actionBtn = `<button class="btn btn-danger w-100 py-2 fw-bold" disabled><i class="bi bi-x-octagon-fill"></i> APPLICATION DECLINED</button>`;
+        } else {
+            actionBtn = `<button class="btn btn-primary w-100 py-2 fw-bold shadow-lg" onclick="markDeliveredScanner('${docId}', '${containerId}')"><i class="bi bi-box-seam"></i> APPROVE & DELIVER BOOKS</button>`;
+        }
+            
+        let printBtn = `<button class="btn btn-dark w-100 mt-2 py-2 fw-bold shadow" onclick="printTokenReceipt()"><i class="bi bi-printer"></i> PRINT RECEIPT</button>`;
+        
+        let badgeColor = d.Status === 'DELIVERED' ? 'success' : (d.Status === 'DECLINED' ? 'danger' : 'warning text-dark');
+
+        document.getElementById(containerId).classList.remove('hidden');
+        document.getElementById(containerId).innerHTML = `
+            <div class="text-start bg-white p-3 rounded shadow-sm border border-primary">
+                <div class="d-flex justify-content-between align-items-center mb-2 border-bottom pb-2">
+                    <h5 class="fw-bold text-primary m-0">TOKEN: ${d.Token}</h5>
+                    <span class="badge bg-${badgeColor} px-3 py-2" style="font-size:14px;">${d.Status}</span>
+                </div>
+                <div class="row g-2 mb-2" style="font-size: 0.95rem;">
+                    <div class="col-6"><span class="text-muted small">MNO:</span><br><b class="text-dark">${d.MemberNo}</b></div>
+                    <div class="col-6"><span class="text-muted small">MOBILE:</span><br><b class="text-dark">${d.Mobile}</b></div>
+                    <div class="col-12"><span class="text-muted small">MEMBER NAME:</span><br><b class="text-dark">${d.MemberName}</b></div>
+                </div>
+                <div class="bg-light p-2 rounded text-center border">
+                    <span class="text-muted small fw-bold">TOTAL AMOUNT TO PAY:</span>
+                    <h3 class="text-danger fw-bold m-0 mt-1">₹ ${d.Amount}</h3>
+                </div>
+                ${stuHtml}
+                <div class="mt-3 border-top pt-3">${actionBtn} ${printBtn}</div>
+            </div>`;
+    } catch(e) { alert("Error: " + e.message); }
+    setLoader(false);
+}
+
+function searchByToken(tText = null) {
     const t = tText || document.getElementById('manualToken').value.toUpperCase();
-    if(!t) return;
-    const res = await db.collection("registrations").where("Token", "==", t).get();
-    if(res.empty) { document.getElementById('verify-res').innerHTML = `<h5 class="text-danger fw-bold">Token Not Found</h5>`; return; }
-    const d = res.docs[0].data();
-    let btnHtml = d.Status === "DELIVERED" ? `<button class="btn btn-success w-100 mt-3" disabled>ALREADY DELIVERED</button>` : `<button class="btn btn-primary w-100 mt-3 shadow" onclick="markDelivered('${res.docs[0].id}')">MARK AS DELIVERED</button>`;
-    document.getElementById('verify-res').innerHTML = `<h5 class="fw-bold text-primary">${d.MemberName}</h5><p class="mb-1">Mobile: ${d.Mobile}</p><p class="mb-1">Students: ${d.Students.length}</p><h4 class="text-danger fw-bold mt-2">Amount: ₹${d.Amount}</h4>${btnHtml}`;
+    executeTokenSearch(t, 'verify-res');
 }
 
-async function markDelivered(id) {
+function searchTokenAdmin() {
+    const t = document.getElementById('admSearchTokenInput').value.toUpperCase();
+    executeTokenSearch(t, 'adm-token-res');
+}
+
+async function markDeliveredScanner(id, containerId) {
+    if(!confirm("Are you sure you want to mark these books as DELIVERED?")) return;
+    setLoader(true, "Updating Status...");
     await db.collection("registrations").doc(id).update({Status: "DELIVERED"});
     alert("Books Marked as Delivered!");
-    searchByToken(); loadStatistics(); 
+    setLoader(false);
+    
+    executeTokenSearch(currentSearchedTokenData.Token, containerId);
+    loadStatistics(); 
+}
+
+function printTokenReceipt() {
+    if(!currentSearchedTokenData) return;
+    const d = currentSearchedTokenData;
+    let stuHtml = "";
+    d.Students.forEach((s, i) => {
+        stuHtml += `<div style="margin-bottom: 12px; padding: 10px; border: 1px dashed #444; background: #fafafa;">
+                <div style="font-size: 16px;"><b>${i+1}. ${s.StudentName} ${s.FatherName} ${s.Surname}</b></div>
+                <div style="font-size: 14px; margin-top: 5px; color: #333;">Standard: <b>${s.Standard}</b> | School: <b>${s.SchoolCollege}</b></div>
+            </div>`;
+    });
+
+    const printWin = window.open('', '', 'width=800,height=600');
+    printWin.document.write(`
+        <html><head><title>Receipt - ${d.Token}</title>
+            <style>
+                body { font-family: 'Segoe UI', Arial, sans-serif; padding: 20px; color: #000; }
+                .header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 20px; }
+                .header h2 { margin: 0; font-size: 22px; text-transform: uppercase; }
+                .token-box { display: flex; justify-content: space-between; align-items: center; background: #eee; padding: 10px 15px; border: 1px solid #000; font-size: 20px; font-weight: bold; }
+                .info-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+                .info-table td { padding: 8px; border: 1px solid #ccc; font-size: 16px; }
+                .amt-box { text-align: right; font-size: 22px; font-weight: bold; margin-bottom: 20px; }
+            </style>
+        </head><body>
+            <div class="header"><h2>SHREE BATRISI JAIN CO-OP EDUCATION SOCIETY LTD.</h2><p style="margin:5px 0 0 0;">Ahmedabad | Registration Receipt</p></div>
+            <div class="token-box"><span>TOKEN NO: ${d.Token}</span><span>[ ${d.Status} ]</span></div>
+            <table class="info-table">
+                <tr><td><b>Member No:</b></td><td>${d.MemberNo}</td><td><b>Mobile No:</b></td><td>${d.Mobile}</td></tr>
+                <tr><td><b>Member Name:</b></td><td colspan="3">${d.MemberName}</td></tr>
+            </table>
+            <div class="amt-box">Total Amount: Rs. ${d.Amount}</div>
+            <h3 style="margin-bottom: 10px; border-bottom: 1px solid #000; display: inline-block;">Student Details (${d.Students.length})</h3>
+            ${stuHtml}
+            <div style="text-align: center; margin-top: 40px; font-size: 12px; border-top: 1px solid #ccc; padding-top: 10px;">Printed on: ${new Date().toLocaleString()}</div>
+            <script>window.onload = function() { window.print(); }</script>
+        </body></html>
+    `);
+    printWin.document.close();
 }
 
 function showSuccess(t, a) {
@@ -622,15 +819,6 @@ async function downloadFullExcel() {
         });
     });
     XLSX.writeFile(XLSX.utils.book_append_sheet(XLSX.utils.book_new(), XLSX.utils.json_to_sheet(data), "Data"), "All_Registrations.xlsx");
-}
-
-function downloadCommitteeExcel() {
-    if(allDeliveredData.length === 0) return alert("No delivered records to export!");
-    let data = [];
-    allDeliveredData.forEach(r => {
-        r.Students.forEach((stu) => { data.push({ Token: r.Token, Status: "DELIVERED", MemberNo: r.MemberNo, MemberName: r.MemberName, Mobile: r.Mobile, Amount: r.Amount, StudentName: stu.StudentName, Standard: stu.Standard }); });
-    });
-    XLSX.writeFile(XLSX.utils.book_append_sheet(XLSX.utils.book_new(), XLSX.utils.json_to_sheet(data), "Delivered"), "Delivered_Records.xlsx");
 }
 
 async function exportFullPDF() {
