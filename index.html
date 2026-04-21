@@ -24,6 +24,11 @@
         #loader { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.9); z-index:10000; display:none; flex-direction:column; align-items:center; justify-content:center; }
         .student-entry { background: #fff; border: 1px solid #dee2e6; padding: 15px; border-radius: 12px; margin-bottom: 15px; border-left: 5px solid var(--primary); box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
         .nav-btn { cursor: pointer; padding: 10px 15px; font-weight: bold; border-radius: 8px; color: var(--primary); }
+        
+        .stat-box { padding: 15px; border-radius: 10px; color: white; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .stat-members { background: #007bff; }
+        .stat-students { background: #fd7e14; }
+        .stat-delivered { background: #28a745; }
     </style>
 </head>
 <body onload="checkRememberMe()">
@@ -89,7 +94,6 @@
                     </div>
                 </div>
                 
-                <!-- Dynamic Student Details Area -->
                 <div id="student-list"></div>
                 
                 <div class="text-end mt-3"><h3 class="text-danger fw-bold">TOTAL: ₹ <span id="totalAmt">0</span></h3></div>
@@ -98,46 +102,48 @@
         </div>
     </div>
 
-    <!-- 3. ADMIN PANEL LOGIN -->
+    <!-- 3. ADMIN PANEL -->
     <div id="admin-login-sec" class="row justify-content-center section hidden">
         <div class="col-md-4">
             <div class="card p-4 border-top border-4 border-danger">
                 <h5 class="text-center mb-4 text-danger fw-bold">Admin Master Access</h5>
                 <input type="text" id="admID" class="form-control mb-3" placeholder="Admin ID">
-                
                 <div class="password-container mb-2">
                     <input type="password" id="admPass" class="form-control" placeholder="Password">
                     <i class="bi bi-eye-slash eye-icon" onclick="togglePassword('admPass', this)"></i>
                 </div>
-
                 <div class="form-check mb-3">
                     <input class="form-check-input" type="checkbox" id="admRemember">
                     <label class="form-check-label small fw-bold" for="admRemember">Remember Me</label>
                 </div>
-                
                 <button class="btn btn-danger w-100 fw-bold" onclick="doAdminLogin()">LOGIN ADMIN</button>
             </div>
         </div>
     </div>
 
-    <!-- ADMIN DASHBOARD -->
     <div id="admin-dash-sec" class="row section hidden">
         <div class="col-md-12">
             <div class="card p-4 shadow">
-                <div class="d-flex justify-content-between border-bottom pb-3">
+                <div class="d-flex justify-content-between border-bottom pb-3 mb-3">
                     <h5 class="text-danger fw-bold">Admin Dashboard</h5>
                     <button class="btn btn-outline-danger btn-sm" onclick="location.reload()">LOGOUT</button>
                 </div>
+
+                <!-- Live Statistics -->
+                <div class="row mb-4">
+                    <div class="col-md-4"><div class="stat-box stat-members"><h6 class="mb-1">Registered Members</h6><h2 class="m-0 fw-bold adm-members-count">0</h2></div></div>
+                    <div class="col-md-4"><div class="stat-box stat-students"><h6 class="mb-1">Total Students</h6><h2 class="m-0 fw-bold adm-students-count">0</h2></div></div>
+                    <div class="col-md-4"><div class="stat-box stat-delivered"><h6 class="mb-1">Books Delivered</h6><h2 class="m-0 fw-bold adm-delivered-count">0</h2></div></div>
+                </div>
                 
-                <!-- Upload Master CSV -->
                 <div class="p-4 bg-light border rounded mt-3 text-center">
-                    <h6 class="fw-bold text-primary">UPLOAD MASTER CSV FILE (SUPER FAST)</h6>
+                    <h6 class="fw-bold text-primary">UPLOAD MASTER CSV FILE (BUG FIXED)</h6>
                     <p class="small text-danger">Format: MemberNo, Name, Native, Mobile, Address</p>
                     <input type="file" id="masterCSV" class="form-control mb-3 mx-auto" style="max-width: 400px;" accept=".csv">
-                    <button class="btn btn-primary px-5 fw-bold" onclick="uploadMasterInstant()">🚀 UPLOAD DATA (Takes 5 Seconds)</button>
+                    <button class="btn btn-primary px-5 fw-bold" onclick="uploadMasterInstant()">🚀 UPLOAD DATA</button>
                 </div>
 
-                <!-- Update Mobile Number Section -->
+                <!-- Update Mobile -->
                 <div class="p-4 bg-white border border-warning rounded mt-4 shadow-sm">
                     <h6 class="fw-bold text-warning border-bottom pb-2 mb-3"><i class="bi bi-phone-vibrate"></i> UPDATE MEMBER MOBILE NUMBER</h6>
                     <div class="row g-2 align-items-center">
@@ -148,16 +154,12 @@
                             <button class="btn btn-warning w-100 fw-bold text-dark" onclick="searchMemberByMno()">SEARCH MEMBER</button>
                         </div>
                     </div>
-                    
-                    <!-- Result Box -->
-                    <div id="update-mob-res" class="mt-3 hidden bg-light p-3 rounded border">
-                        <!-- Content Injected via JS -->
-                    </div>
+                    <div id="update-mob-res" class="mt-3 hidden bg-light p-3 rounded border"></div>
                 </div>
 
                 <div class="text-center mt-4 border-top pt-3">
-                    <button class="btn btn-success mx-1" onclick="downloadFullExcel()"><i class="bi bi-file-excel"></i> EXPORT EXCEL</button>
-                    <button class="btn btn-danger mx-1" onclick="exportFullPDF()"><i class="bi bi-file-pdf"></i> EXPORT PDF</button>
+                    <button class="btn btn-success mx-1" onclick="downloadFullExcel()"><i class="bi bi-file-excel"></i> FULL EXPORT EXCEL</button>
+                    <button class="btn btn-danger mx-1" onclick="exportFullPDF()"><i class="bi bi-file-pdf"></i> FULL EXPORT PDF</button>
                 </div>
             </div>
         </div>
@@ -168,21 +170,17 @@
         <div class="col-md-4">
             <div class="card p-4 border-top border-4 border-dark">
                 <h5 class="text-center mb-4 fw-bold">Committee Login</h5>
-                
                 <label class="small fw-bold text-muted">COMMITTEE MOBILE NUMBER</label>
                 <input type="tel" id="commMobile" class="form-control mb-3 text-center fw-bold" maxlength="10" placeholder="Mobile No">
-                
                 <label class="small fw-bold text-muted">PASSWORD</label>
                 <div class="password-container mb-2">
                     <input type="password" id="commPass" class="form-control text-center" placeholder="Password">
                     <i class="bi bi-eye-slash eye-icon" onclick="togglePassword('commPass', this)"></i>
                 </div>
-
                 <div class="form-check mb-3 d-flex justify-content-center">
                     <input class="form-check-input me-2" type="checkbox" id="commRemember">
                     <label class="form-check-label small fw-bold" for="commRemember">Remember My Login</label>
                 </div>
-
                 <button class="btn btn-dark w-100 fw-bold" onclick="doCommitteeLogin()">LOGIN</button>
             </div>
         </div>
@@ -191,20 +189,53 @@
     <div id="comm-dash-sec" class="row section hidden">
         <div class="col-md-12">
             <div class="card p-4">
-                <div class="d-flex justify-content-between border-bottom pb-2">
+                <div class="d-flex justify-content-between border-bottom pb-2 mb-3">
                     <h5 class="fw-bold">Verification Panel</h5>
                     <button class="btn btn-outline-dark btn-sm" onclick="location.reload()">LOGOUT</button>
                 </div>
+
+                <!-- Committee Stats -->
+                <div class="row mb-4">
+                    <div class="col-md-4"><div class="stat-box stat-members"><h6 class="mb-1">Reg. Members</h6><h3 class="m-0 fw-bold adm-members-count">0</h3></div></div>
+                    <div class="col-md-4"><div class="stat-box stat-students"><h6 class="mb-1">Total Students</h6><h3 class="m-0 fw-bold adm-students-count">0</h3></div></div>
+                    <div class="col-md-4"><div class="stat-box stat-delivered"><h6 class="mb-1">Books Delivered</h6><h3 class="m-0 fw-bold adm-delivered-count">0</h3></div></div>
+                </div>
+
                 <div class="row mt-3">
-                    <div class="col-md-6 border-end">
+                    <div class="col-md-5 border-end">
                         <div id="reader" style="width: 100%;"></div>
                         <input type="text" id="manualToken" class="form-control mt-2 text-center fw-bold" placeholder="Manual Token Entry">
                         <button class="btn btn-primary w-100 mt-2" onclick="searchByToken()">SEARCH TOKEN</button>
                     </div>
-                    <div id="verify-res" class="col-md-6 p-4 text-center d-flex flex-column justify-content-center">
+                    <div id="verify-res" class="col-md-7 p-4 text-center d-flex flex-column justify-content-center">
                         <p class="text-muted">Scan QR or enter token to view details.</p>
                     </div>
                 </div>
+
+                <!-- Delivered Records Section -->
+                <div class="mt-4 pt-3 border-top">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h5 class="fw-bold text-success"><i class="bi bi-check-circle-fill"></i> Delivered Records</h5>
+                        <button class="btn btn-success btn-sm fw-bold" onclick="downloadCommitteeExcel()"><i class="bi bi-file-excel"></i> EXPORT DELIVERED (EXCEL)</button>
+                    </div>
+                    <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                        <table class="table table-bordered table-striped text-center align-middle" style="font-size: 14px;">
+                            <thead class="table-dark sticky-top">
+                                <tr>
+                                    <th>Token</th>
+                                    <th>MNO</th>
+                                    <th>Member Name</th>
+                                    <th>Students</th>
+                                    <th>Amt</th>
+                                </tr>
+                            </thead>
+                            <tbody id="delivered-table-body">
+                                <tr><td colspan="5" class="text-muted">Loading records...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>
@@ -244,13 +275,10 @@ const firebaseConfig = {
     messagingSenderId: "175592360155",
     appId: "1:175592360155:web:ba95f9aba4558fda9d64fe"
 };
-if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-}
+if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
 const db = firebase.firestore();
 const storage = firebase.storage();
 
-// --- COMMITTEE NUMBERS LIST ---
 const committeeMobiles = [
     "9825698298", "9825441916", "9537714100", "9824010710", "9426083001",
     "9426084338", "9426327144", "9824313180", "9898986763", "9825580044",
@@ -258,7 +286,6 @@ const committeeMobiles = [
     "9879033203", "9327513549", "9825253932", "9909902687"
 ];
 
-// --- UI HELPERS ---
 function setLoader(s, t="Processing...") { 
     document.getElementById('loader').style.display = s ? 'flex' : 'none'; 
     document.getElementById('loader-text').innerText = t;
@@ -282,35 +309,74 @@ function togglePassword(inputId, iconElement) {
     }
 }
 
-// --- ADMIN: BATCH CSV UPLOAD (Fixed for strict MNO searching) ---
+// --- LOAD STATISTICS & RECORDS ---
+let allDeliveredData = []; // Store for committee excel
+
+async function loadStatistics() {
+    try {
+        const snap = await db.collection("registrations").get();
+        let totalMem = 0;
+        let totalStu = 0;
+        let totalDel = 0;
+        
+        let tableHTML = "";
+        allDeliveredData = [];
+
+        snap.forEach(doc => {
+            const data = doc.data();
+            totalMem++;
+            totalStu += data.Students ? data.Students.length : 0;
+            if(data.Status === "DELIVERED") {
+                totalDel++;
+                allDeliveredData.push(data);
+                tableHTML += `<tr>
+                    <td class="fw-bold">${data.Token}</td>
+                    <td>${data.MemberNo}</td>
+                    <td>${data.MemberName}</td>
+                    <td>${data.Students.length}</td>
+                    <td class="text-success fw-bold">₹${data.Amount}</td>
+                </tr>`;
+            }
+        });
+
+        // Update UI counters in both Admin and Committee panels
+        document.querySelectorAll('.adm-members-count').forEach(e => e.innerText = totalMem);
+        document.querySelectorAll('.adm-students-count').forEach(e => e.innerText = totalStu);
+        document.querySelectorAll('.adm-delivered-count').forEach(e => e.innerText = totalDel);
+
+        const tbody = document.getElementById('delivered-table-body');
+        if(tbody) tbody.innerHTML = tableHTML || `<tr><td colspan="5" class="text-muted">No records found</td></tr>`;
+        
+    } catch(e) { console.error("Stats error", e); }
+}
+
+// --- ADMIN: CSV UPLOAD (Fixed MNO Document ID issue) ---
 async function uploadMasterInstant() {
     const file = document.getElementById('masterCSV').files[0];
     if(!file) return alert("Please Select CSV File!");
     
-    setLoader(true, "Saving Clean Database (Please Wait)...");
+    setLoader(true, "Saving Clean Database (Takes 10-15 Sec)...");
     
     const reader = new FileReader();
     reader.onload = async function(e) {
         try {
             const lines = e.target.result.split(/\r?\n/);
-            
             let batch = db.batch();
             let count = 0;
             let promises = [];
 
             for(let i=0; i<lines.length; i++) {
                 const d = lines[i].split(",");
-                // Agar column 4 (mobile) valid hai
-                if(d.length >= 4 && d[3] && d[3].trim().length >= 10) {
-                    
-                    // Saare unwanted spaces aur quotes hata diye
-                    const mnoClean = d[0].replace(/['"]/g, '').trim().toUpperCase();
-                    const nameClean = d[1].replace(/['"]/g, '').trim();
-                    const nativeClean = d[2].replace(/['"]/g, '').trim();
-                    const mobileNum = d[3].replace(/['"]/g, '').trim();
+                const mnoClean = d[0] ? d[0].replace(/['"]/g, '').trim().toUpperCase() : "";
+                
+                if(mnoClean && d.length >= 2) { // Sirf wahi save karo jisme MNO ho
+                    const nameClean = d[1] ? d[1].replace(/['"]/g, '').trim() : "";
+                    const nativeClean = d[2] ? d[2].replace(/['"]/g, '').trim() : "";
+                    const mobileNum = d[3] ? d[3].replace(/['"]/g, '').trim() : "";
                     const addrClean = d[4] ? d[4].replace(/['"]/g, '').trim() : "";
 
-                    const docRef = db.collection("master_members").doc(mobileNum);
+                    // DOCUMENT ID ab Mobile ki jagah MNO hoga (Badi problem solved)
+                    const docRef = db.collection("master_members").doc(mnoClean);
                     
                     batch.set(docRef, {
                         mno: mnoClean,
@@ -331,41 +397,37 @@ async function uploadMasterInstant() {
             if(count > 0) promises.push(batch.commit());
             await Promise.all(promises);
             
-            alert(`SUCCESS! Data Uploaded Instantly. System is Ready for Members!`);
-        } catch(err) { 
-            alert("Upload Error: " + err.message); 
-        }
+            alert(`SUCCESS! Data Uploaded. Now all members (even without mobile numbers) are searchable.`);
+        } catch(err) { alert("Upload Error: " + err.message); }
         setLoader(false);
     };
     reader.readAsText(file);
 }
 
-// --- ADMIN: UPDATE MOBILE NUMBER LOGIC (Fixed exact string matching) ---
-let currentUpdateMember = null;
+// --- ADMIN: UPDATE MOBILE NUMBER (Fixed based on new MNO ID) ---
+let currentMnoToUpdate = null;
 
 async function searchMemberByMno() {
-    // strict text cleaning so it exactly matches the DB string
     const mno = document.getElementById('searchMno').value.replace(/['"]/g, '').trim().toUpperCase();
-    
     if(!mno) return alert("Enter Member Number!");
     
     setLoader(true, "Searching Member...");
     try {
-        const snapshot = await db.collection("master_members").where("mno", "==", mno).get();
+        const docRef = await db.collection("master_members").doc(mno).get();
         
-        if(snapshot.empty) {
+        if(!docRef.exists) {
             alert("Member Number '" + mno + "' not found! Make sure you entered it correctly.");
             document.getElementById('update-mob-res').classList.add('hidden');
         } else {
-            const doc = snapshot.docs[0];
-            currentUpdateMember = { id: doc.id, data: doc.data() };
+            const data = docRef.data();
+            currentMnoToUpdate = mno;
             
             document.getElementById('update-mob-res').classList.remove('hidden');
             document.getElementById('update-mob-res').innerHTML = `
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <h6 class="mb-1 fw-bold text-primary">NAME: ${currentUpdateMember.data.name}</h6>
-                        <h6 class="mb-0 fw-bold text-danger">OLD MOBILE: ${currentUpdateMember.data.mobile}</h6>
+                        <h6 class="mb-1 fw-bold text-primary">NAME: ${data.name}</h6>
+                        <h6 class="mb-0 fw-bold text-danger">OLD MOBILE: ${data.mobile || "NOT SET"}</h6>
                     </div>
                 </div>
                 <hr>
@@ -386,18 +448,10 @@ async function updateMobileData() {
     
     setLoader(true, "Updating Mobile Number...");
     try {
-        const check = await db.collection("master_members").doc(newMob).get();
-        if(check.exists) {
-            alert("This Mobile Number is already assigned to another member in the database!");
-            setLoader(false);
-            return;
-        }
-
-        let newData = currentUpdateMember.data;
-        newData.mobile = newMob;
-        
-        await db.collection("master_members").doc(newMob).set(newData);
-        await db.collection("master_members").doc(currentUpdateMember.id).delete();
+        // Sirf us Document (MNO) ke andar mobile field update kardo
+        await db.collection("master_members").doc(currentMnoToUpdate).update({
+            mobile: newMob
+        });
         
         alert("Success! Mobile Number Updated. Member can now login with the new number.");
         document.getElementById('update-mob-res').classList.add('hidden');
@@ -420,24 +474,24 @@ async function doMemberLogin() {
             setLoader(false); return;
         }
 
-        const docRef = await db.collection("master_members").doc(mob).get();
-        if(docRef.exists) {
-            const found = docRef.data();
+        // Ab Document id nahi hai, field se search karenge
+        const snap = await db.collection("master_members").where("mobile", "==", mob).get();
+        
+        if(!snap.empty) {
+            const found = snap.docs[0].data();
             document.getElementById('dispMNo').value = found.mno;
             document.getElementById('dispMName').value = found.name;
             document.getElementById('dispNative').value = found.native;
             document.getElementById('dispAddr').value = found.addr;
             showSection('reg-form-sec');
         } else {
-            alert("Mobile Number NOT FOUND in List! Check number or contact Admin to update it.");
+            alert("Mobile Number NOT FOUND in List! Check number or contact Admin to update it via your Member No.");
         }
-    } catch(e) { 
-        alert("System Error: " + e.message); 
-    }
+    } catch(e) { alert("System Error: " + e.message); }
     setLoader(false);
 }
 
-// --- REGISTRATION: ADVANCED STUDENT FORM ---
+// --- REGISTRATION ---
 function createStudentForm() {
     const c = document.getElementById('selCount').value;
     document.getElementById('totalAmt').innerText = c * 80;
@@ -448,30 +502,12 @@ function createStudentForm() {
         <div class="student-entry">
             <h6 class="text-primary fw-bold border-bottom pb-2">STUDENT ${i} DETAILS</h6>
             <div class="row g-2 mt-1">
-                <div class="col-md-4">
-                    <label class="small text-muted fw-bold">STUDENT NAME</label>
-                    <input type="text" class="form-control s-name" placeholder="Name">
-                </div>
-                <div class="col-md-4">
-                    <label class="small text-muted fw-bold">FATHER NAME</label>
-                    <input type="text" class="form-control s-fname" placeholder="Father Name">
-                </div>
-                <div class="col-md-4">
-                    <label class="small text-muted fw-bold">SURNAME</label>
-                    <input type="text" class="form-control s-surname" placeholder="Surname">
-                </div>
-                <div class="col-md-3 mt-2">
-                    <label class="small text-muted fw-bold">STANDARD (STD)</label>
-                    <input type="text" class="form-control s-std" placeholder="Std (e.g. 10th)">
-                </div>
-                <div class="col-md-5 mt-2">
-                    <label class="small text-muted fw-bold">SCHOOL / COLLEGE NAME</label>
-                    <input type="text" class="form-control s-school" placeholder="School/College Name">
-                </div>
-                <div class="col-md-4 mt-2">
-                    <label class="small text-muted fw-bold text-danger">UPLOAD MARKSHEET</label>
-                    <input type="file" class="form-control s-file border-danger">
-                </div>
+                <div class="col-md-4"><label class="small text-muted fw-bold">STUDENT NAME</label><input type="text" class="form-control s-name" placeholder="Name"></div>
+                <div class="col-md-4"><label class="small text-muted fw-bold">FATHER NAME</label><input type="text" class="form-control s-fname" placeholder="Father Name"></div>
+                <div class="col-md-4"><label class="small text-muted fw-bold">SURNAME</label><input type="text" class="form-control s-surname" placeholder="Surname"></div>
+                <div class="col-md-3 mt-2"><label class="small text-muted fw-bold">STANDARD</label><input type="text" class="form-control s-std" placeholder="Std (e.g. 10th)"></div>
+                <div class="col-md-5 mt-2"><label class="small text-muted fw-bold">SCHOOL/COLLEGE</label><input type="text" class="form-control s-school" placeholder="School Name"></div>
+                <div class="col-md-4 mt-2"><label class="small text-muted fw-bold text-danger">UPLOAD MARKSHEET</label><input type="file" class="form-control s-file border-danger"></div>
             </div>
         </div>`;
     }
@@ -510,7 +546,7 @@ async function finalSubmit() {
     setLoader(false);
 }
 
-// --- ADMIN & COMMITTEE LOGINS ---
+// --- LOGINS ---
 function doAdminLogin() {
     const id = document.getElementById('admID').value.toUpperCase();
     const pass = document.getElementById('admPass').value;
@@ -518,18 +554,13 @@ function doAdminLogin() {
 
     if(id === "BATRISI" && pass === "Bat@3232") {
         if(remember) {
-            localStorage.setItem('admID', id);
-            localStorage.setItem('admPass', pass);
-            localStorage.setItem('admRemember', 'true');
+            localStorage.setItem('admID', id); localStorage.setItem('admPass', pass); localStorage.setItem('admRemember', 'true');
         } else {
-            localStorage.removeItem('admID');
-            localStorage.removeItem('admPass');
-            localStorage.removeItem('admRemember');
+            localStorage.removeItem('admID'); localStorage.removeItem('admPass'); localStorage.removeItem('admRemember');
         }
         showSection('admin-dash-sec');
-    } else {
-        alert("Wrong Admin Credentials");
-    }
+        loadStatistics();
+    } else alert("Wrong Admin Credentials");
 }
 
 function doCommitteeLogin() {
@@ -537,25 +568,18 @@ function doCommitteeLogin() {
     const commPass = document.getElementById('commPass').value;
     const remember = document.getElementById('commRemember').checked;
 
-    if(!committeeMobiles.includes(commMobile)) {
-        return alert("Access Denied! Your mobile number is not in the Committee List.");
-    }
+    if(!committeeMobiles.includes(commMobile)) return alert("Access Denied! Mobile not in Committee List.");
     
     if(commPass === "Bat@3232") {
         if(remember) {
-            localStorage.setItem('commMobile', commMobile);
-            localStorage.setItem('commPass', commPass);
-            localStorage.setItem('commRemember', 'true');
+            localStorage.setItem('commMobile', commMobile); localStorage.setItem('commPass', commPass); localStorage.setItem('commRemember', 'true');
         } else {
-            localStorage.removeItem('commMobile');
-            localStorage.removeItem('commPass');
-            localStorage.removeItem('commRemember');
+            localStorage.removeItem('commMobile'); localStorage.removeItem('commPass'); localStorage.removeItem('commRemember');
         }
         showSection('comm-dash-sec');
+        loadStatistics();
         new Html5Qrcode("reader").start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (t) => searchByToken(t));
-    } else {
-        alert("Wrong Password!");
-    }
+    } else alert("Wrong Password!");
 }
 
 function checkRememberMe() {
@@ -571,15 +595,14 @@ function checkRememberMe() {
     }
 }
 
-// --- SCANNER & EXPORT LOGIC ---
+// --- SCANNER & EXPORTS ---
 async function searchByToken(tText = null) {
     const t = tText || document.getElementById('manualToken').value.toUpperCase();
     if(!t) return;
     
     const res = await db.collection("registrations").where("Token", "==", t).get();
     if(res.empty) {
-        document.getElementById('verify-res').innerHTML = `<h5 class="text-danger fw-bold">Token Not Found</h5>`;
-        return;
+        document.getElementById('verify-res').innerHTML = `<h5 class="text-danger fw-bold">Token Not Found</h5>`; return;
     }
     const d = res.docs[0].data();
     
@@ -598,6 +621,7 @@ async function markDelivered(id) {
     await db.collection("registrations").doc(id).update({Status: "DELIVERED"});
     alert("Books Marked as Delivered!");
     searchByToken();
+    loadStatistics(); // Reload table and stats
 }
 
 function showSuccess(t, a) {
@@ -608,11 +632,12 @@ function showSuccess(t, a) {
     new QRCode(document.getElementById("qrcode"), { text: t, width: 160, height: 160 });
 }
 
+// ADMIN EXPORT (ALL DATA)
 async function downloadFullExcel() {
     const snap = await db.collection("registrations").get();
     let data = []; snap.forEach(d => {
         let r = d.data();
-        r.Students.forEach((stu, i) => {
+        r.Students.forEach((stu) => {
             data.push({
                 Token: r.Token, Date: r.Date, Status: r.Status, MemberNo: r.MemberNo, MemberName: r.MemberName,
                 Mobile: r.Mobile, StudentName: stu.StudentName, FatherName: stu.FatherName,
@@ -620,7 +645,22 @@ async function downloadFullExcel() {
             });
         });
     });
-    XLSX.writeFile(XLSX.utils.book_append_sheet(XLSX.utils.book_new(), XLSX.utils.json_to_sheet(data), "Data"), "Report.xlsx");
+    XLSX.writeFile(XLSX.utils.book_append_sheet(XLSX.utils.book_new(), XLSX.utils.json_to_sheet(data), "Data"), "All_Registrations.xlsx");
+}
+
+// COMMITTEE EXPORT (ONLY DELIVERED)
+function downloadCommitteeExcel() {
+    if(allDeliveredData.length === 0) return alert("No delivered records to export!");
+    let data = [];
+    allDeliveredData.forEach(r => {
+        r.Students.forEach((stu) => {
+            data.push({
+                Token: r.Token, Status: "DELIVERED", MemberNo: r.MemberNo, MemberName: r.MemberName,
+                Mobile: r.Mobile, Amount: r.Amount, StudentName: stu.StudentName, Standard: stu.Standard
+            });
+        });
+    });
+    XLSX.writeFile(XLSX.utils.book_append_sheet(XLSX.utils.book_new(), XLSX.utils.json_to_sheet(data), "Delivered"), "Delivered_Records.xlsx");
 }
 
 async function exportFullPDF() {
