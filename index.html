@@ -234,7 +234,7 @@
         <div class="col-md-12">
             <div class="card p-4">
                 <div class="d-flex justify-content-between border-bottom pb-2 mb-3">
-                    <h5 class="fw-bold">Verification Panel</h5>
+                    <h5 class="fw-bold">Verification Panel <span id="logged-comm-name" class="fs-6 fw-normal text-muted ms-2"></span></h5>
                     <button class="btn btn-outline-dark btn-sm" onclick="location.reload()">LOGOUT</button>
                 </div>
 
@@ -338,11 +338,27 @@ const firebaseConfig = {
 if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
 const db = firebase.firestore();
 
-const committeeMobiles = [
-    "9825698298", "9825441916", "9537714100", "9824010710", "9426083001",
-    "9426084338", "9426327144", "9824313180", "9898986763", "9825580044",
-    "9924446767", "9824499844", "9898251001", "9327054179", "9374005997",
-    "9879033203", "9327513549", "9825253932", "9909902687"
+// FULL COMMITTEE LIST ADDED
+const committeeMembers = [
+    { name: "HITENDRABHAI JASHWANTLAL SHAH", role: "PRESIDENT", native: "BAHIYAL", mobile: "9825698298" },
+    { name: "GUNWANTLAL CHANDULAL SHAH", role: "VICE PRESIDENT", native: "VALAD", mobile: "9825441916" },
+    { name: "MAYANKKUMAR RAMANLAL SHAH", role: "SECRETARY", native: "BAHIYAL", mobile: "9537714100" },
+    { name: "SRUJAL PANKAJKUMAR SHAH", role: "VICE SECRETARY", native: "VAHELAL", mobile: "9824010710" },
+    { name: "PRAGNESHBHAI RAMESHCHANDRA SHAH", role: "TREASURER", native: "PARDHOL", mobile: "9426083001" },
+    { name: "HIMANSHU MAHENDRAKUMAR SHAH", role: "EXECUTIVE MEMBER", native: "OGANAJ", mobile: "9426084338" },
+    { name: "ASHVINKUMAR PUNAMCHAND SHAH", role: "EXECUTIVE MEMBER", native: "BAHIYAL", mobile: "9426327144" },
+    { name: "BHAVESH BIPINCHANDRA SHAH", role: "EXECUTIVE MEMBER", native: "ADALAJ", mobile: "9824313180" },
+    { name: "CHIRAGBHAI RASIKLAL SHAH", role: "EXECUTIVE MEMBER", native: "OGANAJ", mobile: "9898986763" },
+    { name: "JAYESHKUMAR CHINUBHAI SHAH", role: "EXECUTIVE MEMBER", native: "VADODARA", mobile: "9825580044" },
+    { name: "NAYANKUMAR ARVINDKUMAR SHAH", role: "EXECUTIVE MEMBER", native: "NARODA", mobile: "9924446767" },
+    { name: "NAILESHBHAI JAYANTILAL SHAH", role: "EXECUTIVE MEMBER", native: "SANTEJ", mobile: "9824499844" },
+    { name: "PRAVINCHANDRA POPATLAL SHAH", role: "EXECUTIVE MEMBER", native: "PRANTIYA", mobile: "9898251001" },
+    { name: "SANDIP MAHENDARABHAI SHAH", role: "EXECUTIVE MEMBER", native: "PASUNJ", mobile: "9327054179" },
+    { name: "SAUMILKUMAR SOMCHAND SHAH", role: "EXECUTIVE MEMBER", native: "A. MUVADA", mobile: "9374005997" },
+    { name: "SHRENIKKUMAR SAKARCHAND SHAH", role: "EXECUTIVE MEMBER", native: "HARSOLI", mobile: "9879033203" },
+    { name: "MINESH DEVENDRABHAI SHAH", role: "EXECUTIVE MEMBER", native: "VALAD", mobile: "9327513549" },
+    { name: "RAKESH BHARATBHAI SHAH", role: "EXECUTIVE MEMBER", native: "MIROLI", mobile: "9825253932" },
+    { name: "MIHIR DINESHBHAI SHAH", role: "EXECUTIVE MEMBER", native: "KUBADTHAL", mobile: "9909902687" }
 ];
 
 function setLoader(show, mainText="Processing...", subText="Please do not refresh the page.") { 
@@ -409,11 +425,21 @@ async function loadStatistics() {
                 `).join('');
             }
 
+            // Action By Detail (Who approved/rejected)
+            let actionInfoHTML = "";
+            if(data.ActionBy && (data.Status === "DELIVERED" || data.Status === "DECLINED")) {
+                let txtColor = data.Status === "DELIVERED" ? "text-success" : "text-danger";
+                actionInfoHTML = `<div style="font-size:10px; margin-top:4px;" class="fw-bold ${txtColor}">By: ${data.ActionBy.split(" ")[0]}</div>`;
+            }
+
             tableHTML += `<tr class="record-row">
                 <td class="fw-bold align-middle">${data.Token}</td>
                 <td class="align-middle">${memDetailsHTML}</td>
                 <td class="align-middle">${stuDetailsHTML}</td>
-                <td class="align-middle"><span class="badge bg-${badgeColor}">${data.Status}</span></td>
+                <td class="align-middle">
+                    <span class="badge bg-${badgeColor}">${data.Status}</span>
+                    ${actionInfoHTML}
+                </td>
                 <td class="align-middle">${actionBtns}</td>
             </tr>`;
         });
@@ -454,7 +480,15 @@ function filterRecords(inputId, tableBodyId) {
 async function executeApprove(id) {
     if(!confirm("Are you sure you want to APPROVE (Mark as Delivered) this record?")) return;
     setLoader(true, "Approving...");
-    await db.collection("registrations").doc(id).update({Status: "DELIVERED"});
+    
+    const actionByName = localStorage.getItem('loggedName') || "Admin";
+    const actionByMob = localStorage.getItem('loggedMobile') || "";
+
+    await db.collection("registrations").doc(id).update({
+        Status: "DELIVERED",
+        ActionBy: actionByName,
+        ActionByMobile: actionByMob
+    });
     alert("Record Approved successfully!");
     setLoader(false);
     loadStatistics();
@@ -465,7 +499,15 @@ async function executeDecline(id) {
     if(reason === null || reason.trim() === "") return alert("Action Cancelled. Reason is mandatory to decline!");
     
     setLoader(true, "Declining...");
-    await db.collection("registrations").doc(id).update({ Status: "DECLINED", DeclineReason: reason.trim() });
+    const actionByName = localStorage.getItem('loggedName') || "Admin";
+    const actionByMob = localStorage.getItem('loggedMobile') || "";
+
+    await db.collection("registrations").doc(id).update({ 
+        Status: "DECLINED", 
+        DeclineReason: reason.trim(),
+        ActionBy: actionByName,
+        ActionByMobile: actionByMob
+    });
     alert("Record Declined successfully. Member will see the reason.");
     setLoader(false);
     loadStatistics();
@@ -613,10 +655,13 @@ async function compressImage(file) {
             const img = new Image(); img.src = event.target.result;
             img.onload = () => {
                 const canvas = document.createElement('canvas');
-                const MAX_WIDTH = 800; const scaleSize = MAX_WIDTH / img.width;
+                // Increased width for much better clarity (was 800)
+                const MAX_WIDTH = 1600; 
+                const scaleSize = MAX_WIDTH / img.width;
                 canvas.width = MAX_WIDTH; canvas.height = img.height * scaleSize;
                 const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                canvas.toBlob((blob) => { resolve(blob); }, 'image/jpeg', 0.6); 
+                // Increased quality to 90% (0.9) for clear readability
+                canvas.toBlob((blob) => { resolve(blob); }, 'image/jpeg', 0.9); 
             };
         };
         reader.onerror = error => reject(error);
@@ -657,7 +702,7 @@ async function finalSubmit() {
         await db.collection("registrations").add({
             Token: token, Amount: studentData.length * 80, Mobile: document.getElementById('memMobile').value,
             MemberName: document.getElementById('dispMName').value, MemberNo: document.getElementById('dispMNo').value,
-            Native: document.getElementById('dispNative').value, // Saved Native Data
+            Native: document.getElementById('dispNative').value,
             Students: studentData, Status: "PENDING", Date: new Date().toISOString()
         });
         showSuccess(token, studentData.length * 80);
@@ -670,24 +715,46 @@ function doAdminLogin() {
     if(id === "BATRISI" && pass === "Bat@3232") {
         if(remember) { localStorage.setItem('admID', id); localStorage.setItem('admPass', pass); localStorage.setItem('admRemember', 'true'); } 
         else { localStorage.removeItem('admID'); localStorage.removeItem('admPass'); localStorage.removeItem('admRemember'); }
+        
+        localStorage.setItem('loggedName', 'Admin (Master)');
+        localStorage.setItem('loggedMobile', 'Admin');
+
         showSection('admin-dash-sec'); loadStatistics();
     } else alert("Wrong Admin Credentials");
 }
 
 function doCommitteeLogin() {
     const commMobile = document.getElementById('commMobile').value.trim(); const commPass = document.getElementById('commPass').value; const remember = document.getElementById('commRemember').checked;
-    if(!committeeMobiles.includes(commMobile)) return alert("Access Denied! Mobile not in Committee List.");
+    
+    // Check if mobile exists in committee member array
+    const member = committeeMembers.find(m => m.mobile === commMobile);
+    if(!member) return alert("Access Denied! Mobile not in Committee List.");
+
     if(commPass === "Bat@3232") {
         if(remember) { localStorage.setItem('commMobile', commMobile); localStorage.setItem('commPass', commPass); localStorage.setItem('commRemember', 'true'); } 
         else { localStorage.removeItem('commMobile'); localStorage.removeItem('commPass'); localStorage.removeItem('commRemember'); }
+        
+        // Save logged-in member details for Action Tracking
+        localStorage.setItem('loggedName', member.name);
+        localStorage.setItem('loggedMobile', member.mobile);
+        document.getElementById('logged-comm-name').innerText = `(${member.name})`;
+
         showSection('comm-dash-sec'); loadStatistics();
         new Html5Qrcode("reader").start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (t) => searchByToken(t));
     } else alert("Wrong Password!");
 }
 
 function checkRememberMe() {
-    if(localStorage.getItem('admRemember') === 'true') { document.getElementById('admID').value = localStorage.getItem('admID'); document.getElementById('admPass').value = localStorage.getItem('admPass'); document.getElementById('admRemember').checked = true; }
-    if(localStorage.getItem('commRemember') === 'true') { document.getElementById('commMobile').value = localStorage.getItem('commMobile'); document.getElementById('commPass').value = localStorage.getItem('commPass'); document.getElementById('commRemember').checked = true; }
+    if(localStorage.getItem('admRemember') === 'true') { 
+        document.getElementById('admID').value = localStorage.getItem('admID'); 
+        document.getElementById('admPass').value = localStorage.getItem('admPass'); 
+        document.getElementById('admRemember').checked = true; 
+    }
+    if(localStorage.getItem('commRemember') === 'true') { 
+        document.getElementById('commMobile').value = localStorage.getItem('commMobile'); 
+        document.getElementById('commPass').value = localStorage.getItem('commPass'); 
+        document.getElementById('commRemember').checked = true; 
+    }
 }
 
 let currentSearchedTokenData = null;
@@ -767,7 +834,15 @@ function searchTokenAdmin() {
 async function markDeliveredScanner(id, containerId) {
     if(!confirm("Are you sure you want to mark these books as DELIVERED?")) return;
     setLoader(true, "Updating Status...");
-    await db.collection("registrations").doc(id).update({Status: "DELIVERED"});
+    
+    const actionByName = localStorage.getItem('loggedName') || "Admin";
+    const actionByMob = localStorage.getItem('loggedMobile') || "";
+
+    await db.collection("registrations").doc(id).update({
+        Status: "DELIVERED",
+        ActionBy: actionByName,
+        ActionByMobile: actionByMob
+    });
     alert("Books Marked as Delivered!");
     setLoader(false);
     
@@ -823,27 +898,43 @@ function showSuccess(t, a) {
     new QRCode(document.getElementById("qrcode"), { text: t, width: 160, height: 160 });
 }
 
+// FIXED EXCEL DOWNLOAD FUNCTION
 async function downloadFullExcel() {
-    const snap = await db.collection("registrations").get();
-    let data = []; 
-    snap.forEach(d => {
-        let r = d.data();
-        r.Students.forEach((stu) => {
-            data.push({ 
-                "MEMBER NO": r.MemberNo,
-                "FULL NAME": r.MemberName,
-                "NATIVE": r.Native || "-",
-                "STUDENT FULL NAME": `${stu.StudentName} ${stu.FatherName} ${stu.Surname}`,
-                "STANDARD": stu.Standard,
-                "SCHOOL/COLLEGE": stu.SchoolCollege,
-                "DOCUMENT LINK": stu.MarksheetURL,
-                "TOKEN": r.Token,
-                "MOBILE": r.Mobile,
-                "STATUS": r.Status
-            });
+    setLoader(true, "Generating Excel...", "Please wait a moment.");
+    try {
+        const snap = await db.collection("registrations").orderBy("Date", "desc").get();
+        let data = []; 
+        snap.forEach(d => {
+            let r = d.data();
+            if(r.Students && r.Students.length > 0) {
+                r.Students.forEach((stu) => {
+                    data.push({ 
+                        "TOKEN": r.Token,
+                        "MEMBER NO": r.MemberNo,
+                        "MEMBER NAME": r.MemberName,
+                        "NATIVE": r.Native || "-",
+                        "MOBILE": r.Mobile,
+                        "STUDENT FULL NAME": `${stu.StudentName} ${stu.FatherName} ${stu.Surname}`,
+                        "STANDARD": stu.Standard,
+                        "SCHOOL/COLLEGE": stu.SchoolCollege,
+                        "DOCUMENT LINK": stu.MarksheetURL,
+                        "STATUS": r.Status,
+                        "ACTION BY (NAME)": r.ActionBy || "-",
+                        "ACTION BY (MOBILE)": r.ActionByMobile || "-",
+                        "DECLINE REASON": r.DeclineReason || "-"
+                    });
+                });
+            }
         });
-    });
-    XLSX.writeFile(XLSX.utils.book_append_sheet(XLSX.utils.book_new(), XLSX.utils.json_to_sheet(data), "Data"), "All_Registrations.xlsx");
+        
+        const ws = XLSX.utils.json_to_sheet(data);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Registrations");
+        XLSX.writeFile(wb, "All_Registrations_Report.xlsx");
+    } catch(e) {
+        alert("Excel Download Error: " + e.message);
+    }
+    setLoader(false);
 }
 
 async function exportFullPDF() {
