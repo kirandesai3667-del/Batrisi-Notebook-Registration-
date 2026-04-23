@@ -130,11 +130,11 @@
                     <div id="otherMemberFields" class="row g-2 mt-2 hidden">
                         <div class="col-md-6">
                             <label class="small fw-bold text-muted">Other Member Number</label>
-                            <input type="text" id="otherMNo" class="form-control" placeholder="Enter Member No">
+                            <input type="text" id="otherMNo" class="form-control" placeholder="Enter Member No" onblur="fetchOtherMemberName()">
                         </div>
                         <div class="col-md-6">
                             <label class="small fw-bold text-muted">Other Member Name</label>
-                            <input type="text" id="otherMName" class="form-control" placeholder="Enter Member Name">
+                            <input type="text" id="otherMName" class="form-control" placeholder="Auto-filled Name" readonly>
                         </div>
                     </div>
                 </div>
@@ -409,6 +409,27 @@ function toggleOtherMemberFields() {
     } else {
         fields.classList.add('hidden');
     }
+}
+
+async function fetchOtherMemberName() {
+    const mno = document.getElementById('otherMNo').value.trim().toUpperCase();
+    const nameInput = document.getElementById('otherMName');
+    if(!mno) { nameInput.value = ""; return; }
+
+    setLoader(true, "Searching Member...", "");
+    try {
+        const members = await fetchMasterDB();
+        const foundUser = members.find(m => m.mno === mno);
+        if(foundUser) {
+            nameInput.value = foundUser.name;
+        } else {
+            nameInput.value = "";
+            alert("Member not found in records");
+        }
+    } catch (e) {
+        alert("Error: " + e.message);
+    }
+    setLoader(false);
 }
 
 // --- LOAD STATISTICS & RECORDS TABLE ---
@@ -845,6 +866,20 @@ async function finalSubmit() {
             };
         }
 
+        const now = new Date();
+        const dd = String(now.getDate()).padStart(2, '0');
+        const mm = String(now.getMonth() + 1).padStart(2, '0');
+        const yyyy = now.getFullYear();
+        const regDateStr = `${dd}/${mm}/${yyyy}`;
+
+        let hours = now.getHours();
+        let minutes = now.getMinutes();
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        hours = hours % 12;
+        hours = hours ? hours : 12; 
+        minutes = minutes < 10 ? '0' + minutes : minutes;
+        const regTimeStr = `${hours}:${minutes} ${ampm}`;
+
         await db.runTransaction(async (transaction) => {
             const doc = await transaction.get(counterRef);
             let nextNum = 1;
@@ -868,6 +903,8 @@ async function finalSubmit() {
                     Student: studentData[i], 
                     Status: "PENDING", 
                     Date: new Date().toISOString(),
+                    RegDate: regDateStr,
+                    RegTime: regTimeStr,
                     OtherFamilyMember: otherFamilyMember,
                     OtherMemberDetails: otherMemberData
                 });
@@ -1069,6 +1106,8 @@ async function downloadFullExcel() {
             if(r.Student) {
                 data.push({ 
                     "TOKEN": r.Token,
+                    "REGISTRATION DATE": r.RegDate || "-",
+                    "REGISTRATION TIME": r.RegTime || "-",
                     "MEMBER NO": r.MemberNo,
                     "MEMBER NAME": r.MemberName,
                     "NATIVE": r.Native || "-",
