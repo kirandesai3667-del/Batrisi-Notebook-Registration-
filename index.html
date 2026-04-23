@@ -108,7 +108,7 @@
                         <input type="text" id="dispAddr" class="form-control bg-white" readonly>
                     </div>
                     <div class="col-md-4">
-                        <label class="small fw-bold text-danger">NO. OF STUDENTS (₹80 Each):</label>
+                        <label class="small fw-bold text-danger">NO. OF STUDENTS (₹<span id="lblBasePrice">80</span> Each):</label>
                         <select id="selCount" class="form-select border-danger fw-bold" onchange="createStudentForm()">
                             <option value="">SELECT</option>
                             <option value="1">1 STUDENT (₹80)</option><option value="2">2 STUDENTS (₹160)</option>
@@ -208,6 +208,32 @@
                     </div>
                 </div>
                 
+                <!-- ADMIN DISTRIBUTION SETTINGS & PRICE SETTING -->
+                <div class="p-4 bg-white border border-info rounded mt-4 shadow-sm">
+                    <h6 class="fw-bold text-info border-bottom pb-2 mb-3"><i class="bi bi-gear-fill"></i> SET DISTRIBUTION SCHEDULE & DYNAMIC PRICE</h6>
+                    <div class="row g-2 align-items-center">
+                        <div class="col-md-3">
+                            <label class="small fw-bold text-muted">Distribution Date</label>
+                            <input type="text" id="adminDistDate" class="form-control fw-bold" placeholder="e.g., 28/04/2026">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="small fw-bold text-muted">Start Time</label>
+                            <input type="text" id="adminDistStart" class="form-control fw-bold" placeholder="e.g., 10:00 AM">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="small fw-bold text-muted">End Time</label>
+                            <input type="text" id="adminDistEnd" class="form-control fw-bold" placeholder="e.g., 02:00 PM">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="small fw-bold text-danger">Price Per Student (₹)</label>
+                            <input type="number" id="adminPrice" class="form-control fw-bold border-danger" placeholder="e.g., 80">
+                        </div>
+                        <div class="col-md-12 mt-3">
+                            <button class="btn btn-info w-100 fw-bold text-dark" onclick="saveDistributionSettings()">SAVE SCHEDULE & SYSTEM SETTINGS</button>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- ADMIN TOKEN SEARCH & PRINT -->
                 <div class="p-4 bg-white border border-primary rounded mt-4 shadow-sm">
                     <h6 class="fw-bold text-primary border-bottom pb-2 mb-3"><i class="bi bi-search"></i> SEARCH & PRINT TOKEN DETAILS</h6>
@@ -384,6 +410,8 @@ const committeeMembers = [
     { name: "MIHIR DINESHBHAI SHAH", role: "EXECUTIVE MEMBER", native: "KUBADTHAL", mobile: "9909902687" }
 ];
 
+let globalPricePerStudent = 80;
+
 function setLoader(show, mainText="Processing...", subText="Please do not refresh the page.") { 
     document.getElementById('loader').style.display = show ? 'flex' : 'none'; 
     document.getElementById('loader-text').innerText = mainText;
@@ -434,6 +462,14 @@ async function fetchOtherMemberName() {
 
 // --- LOAD STATISTICS & RECORDS TABLE ---
 async function loadStatistics() {
+    let adminGlobalPrice = 80;
+    try {
+        const distDoc = await db.collection("settings").doc("distribution_info").get();
+        if(distDoc.exists && distDoc.data().price) {
+            adminGlobalPrice = parseInt(distDoc.data().price);
+        }
+    } catch(e) {}
+
     try {
         const snap = await db.collection("registrations").orderBy("TokenId", "desc").get();
         let totalMem = 0; let totalStu = 0; let totalDel = 0;
@@ -459,14 +495,15 @@ async function loadStatistics() {
                 <button class="btn btn-dark table-action-btn" onclick="executeDelete('${id}')" title="Delete"><i class="bi bi-trash"></i></button>
             `;
 
-            // Member Details Box (Amount added here)
+            // Member Details Box (Amount calculated dynamically everywhere as per instructions)
+            let displayAmount = adminGlobalPrice;
             let memDetailsHTML = `
                 <div class="text-start" style="font-size: 12px; line-height: 1.4;">
                     <span class="fw-bold text-primary search-mno">MNO: ${data.MemberNo}</span><br>
                     <span class="fw-bold">${data.MemberName}</span><br>
                     <span class="text-muted">Native: ${data.Native || '-'}</span><br>
                     <span class="search-mob text-muted">Mob: ${data.Mobile}</span><br>
-                    <span class="badge bg-warning text-dark mt-1 border border-secondary" style="font-size: 11px;">Amount: ₹ ${data.Amount}</span>
+                    <span class="badge bg-warning text-dark mt-1 border border-secondary" style="font-size: 11px;">Amount: ₹ ${displayAmount}</span>
                 </div>
             `;
 
@@ -654,7 +691,48 @@ async function updateMobileData() {
     setLoader(false);
 }
 
-// FIXED: MEMBER DASHBOARD LOGIN SYSTEM (Removed orderBy to fix Index Error)
+async function saveDistributionSettings() {
+    const date = document.getElementById('adminDistDate').value.trim();
+    const start = document.getElementById('adminDistStart').value.trim();
+    const end = document.getElementById('adminDistEnd').value.trim();
+    const price = document.getElementById('adminPrice').value.trim() || 80;
+    setLoader(true, "Saving Settings...");
+    try {
+        await db.collection("settings").doc("distribution_info").set({
+            date: date,
+            start: start,
+            end: end,
+            price: price
+        });
+        alert("Settings Saved Successfully!");
+    } catch(e) { alert("Error: " + e.message); }
+    setLoader(false);
+}
+
+async function loadDistributionSettings() {
+    try {
+        const doc = await db.collection("settings").doc("distribution_info").get();
+        if(doc.exists) {
+            const data = doc.data();
+            if(document.getElementById('adminDistDate')) document.getElementById('adminDistDate').value = data.date || "";
+            if(document.getElementById('adminDistStart')) document.getElementById('adminDistStart').value = data.start || "";
+            if(document.getElementById('adminDistEnd')) document.getElementById('adminDistEnd').value = data.end || "";
+            if(document.getElementById('adminPrice')) document.getElementById('adminPrice').value = data.price || 80;
+            if(data.price) globalPricePerStudent = parseInt(data.price);
+        }
+    } catch(e) {}
+}
+
+function updateDynamicPricingUI() {
+    document.getElementById('lblBasePrice').innerText = globalPricePerStudent;
+    const sel = document.getElementById('selCount');
+    sel.innerHTML = '<option value="">SELECT</option>';
+    for(let i=1; i<=5; i++) {
+        sel.innerHTML += `<option value="${i}">${i} STUDENT(S) (₹${i * globalPricePerStudent})</option>`;
+    }
+}
+
+// FIXED: MEMBER DASHBOARD LOGIN SYSTEM
 async function doMemberLogin() {
     const mob = document.getElementById('memMobile').value.trim();
     if(mob.length < 10) return alert("Enter valid 10-digit Mobile Number!");
@@ -669,7 +747,17 @@ async function doMemberLogin() {
             setLoader(false); return;
         }
 
-        // Removed orderBy("TokenId", "desc") to prevent Firebase Composite Index Error
+        let distDate = "TBA", distStart = "TBA", distEnd = "TBA";
+        try {
+            const distDoc = await db.collection("settings").doc("distribution_info").get();
+            if(distDoc.exists) {
+                distDate = distDoc.data().date || "TBA";
+                distStart = distDoc.data().start || "TBA";
+                distEnd = distDoc.data().end || "TBA";
+                if(distDoc.data().price) globalPricePerStudent = parseInt(distDoc.data().price);
+            }
+        } catch(e) {}
+
         const reg = await db.collection("registrations").where("Mobile", "==", mob).get();
         
         if(!reg.empty) {
@@ -683,23 +771,44 @@ async function doMemberLogin() {
             records.forEach(d => {
                 if(!d.Student) return; // ignore old data structure
                 
-                let stuName = `<span class="text-primary fw-bold">${d.Student.StudentName} ${d.Student.Surname}</span> <span class="text-muted small">(Std: ${d.Student.Standard})</span>`;
+                let displayStatus = d.Status;
+                if(d.Status === 'DELIVERED') displayStatus = 'Approved'; 
+
+                let stuName = `<span class="text-primary fw-bold">Student: ${d.Student.StudentName} ${d.Student.FatherName} ${d.Student.Surname}</span> <br><span class="text-muted small fw-bold">STD: ${d.Student.Standard}</span>`;
                 let badge = d.Status === 'DELIVERED' ? 'success' : (d.Status === 'DECLINED' ? 'danger' : 'warning text-dark');
                 let reasonBox = d.Status === 'DECLINED' ? `<div class="bg-white border border-danger text-danger p-2 mt-2 rounded small"><b>Declined Reason:</b> ${d.DeclineReason}</div>` : "";
+                
+                let distInfoBox = "";
+                if(d.Status === 'DELIVERED') {
+                    distInfoBox = `
+                    <div class="mt-2 pt-2 border-top border-success text-dark small fw-bold">
+                        Distribution Date: ${distDate}<br>
+                        Time: ${distStart} – ${distEnd}
+                    </div>`;
+                }
 
                 html += `
                 <div class="border border-${badge} bg-light p-3 rounded mb-3 shadow-sm text-start">
                     <div class="d-flex justify-content-between align-items-center mb-2 border-bottom pb-2">
                         <h6 class="fw-bold text-dark m-0">Token: ${d.Token}</h6>
-                        <span class="badge bg-${badge} px-3 py-2 shadow-sm">${d.Status}</span>
+                        <span class="badge bg-${badge} px-3 py-2 shadow-sm text-uppercase">Status: ${displayStatus}</span>
                     </div>
-                    <div class="mb-1">${stuName}</div>
+                    <div class="mb-1 lh-sm">${stuName}</div>
                     ${reasonBox}
+                    ${distInfoBox}
                 </div>`;
             });
 
+            let totalAmount = records.length * globalPricePerStudent;
+            let summaryBox = `
+            <div class="alert alert-info border-info text-center shadow-sm p-3 mb-4 rounded">
+                <h5 class="fw-bold m-0 text-dark">TOTAL AMOUNT PAYABLE</h5>
+                <h3 class="text-primary fw-bold mt-1 mb-2">₹ ${totalAmount}</h3>
+                <span class="small text-muted fw-bold">${records.length} Student(s) Registered × ₹${globalPricePerStudent} per student</span>
+            </div>`;
+
             if(html !== "") {
-                document.getElementById('member-status-list').innerHTML = html;
+                document.getElementById('member-status-list').innerHTML = summaryBox + html;
                 showSection('member-status-sec');
             } else {
                 openRegistrationForm();
@@ -718,12 +827,13 @@ function openRegistrationForm() {
     document.getElementById('dispMName').value = globalMemberData.name;
     document.getElementById('dispNative').value = globalMemberData.native;
     document.getElementById('dispAddr').value = globalMemberData.addr;
+    updateDynamicPricingUI();
     showSection('reg-form-sec');
 }
 
 function createStudentForm() {
     const c = document.getElementById('selCount').value;
-    document.getElementById('totalAmt').innerText = c * 80;
+    document.getElementById('totalAmt').innerText = c * globalPricePerStudent;
     const list = document.getElementById('student-list'); list.innerHTML = "";
     for(let i=1; i<=c; i++) {
         list.innerHTML += `
@@ -907,7 +1017,7 @@ async function finalSubmit() {
                 transaction.set(newDocRef, {
                     Token: token, 
                     TokenId: nextNum, 
-                    Amount: 80, // PER STUDENT AMOUNT
+                    Amount: globalPricePerStudent, // DYNAMIC PRICE USED
                     Mobile: document.getElementById('memMobile').value,
                     MemberName: document.getElementById('dispMName').value, 
                     MemberNo: document.getElementById('dispMNo').value,
@@ -925,7 +1035,7 @@ async function finalSubmit() {
             transaction.set(counterRef, { lastNumber: nextNum - 1 }, { merge: true });
         });
 
-        showSuccess(generatedTokens, studentData.length * 80);
+        showSuccess(generatedTokens, studentData.length * globalPricePerStudent);
     } catch(e) { console.error(e); alert("Registration Failed! Something went wrong."); } 
     finally { setLoader(false); }
 }
@@ -940,6 +1050,7 @@ function doAdminLogin() {
         localStorage.setItem('loggedMobile', 'Admin');
 
         showSection('admin-dash-sec'); loadStatistics();
+        loadDistributionSettings();
     } else alert("Wrong Admin Credentials");
 }
 
