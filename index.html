@@ -117,6 +117,27 @@
                         </select>
                     </div>
                 </div>
+
+                <!-- NEW BLOCK: Other Family Member -->
+                <div class="row g-3 p-3 bg-white rounded mb-4 border border-warning shadow-sm">
+                    <div class="col-md-12">
+                        <label class="small fw-bold text-dark">Do you have any other member in your family?</label>
+                        <select id="otherMemberSelect" class="form-select border-warning fw-bold mt-1" onchange="toggleOtherMemberFields()">
+                            <option value="No">No</option>
+                            <option value="Yes">Yes</option>
+                        </select>
+                    </div>
+                    <div id="otherMemberFields" class="row g-2 mt-2 hidden">
+                        <div class="col-md-6">
+                            <label class="small fw-bold text-muted">Other Member Number</label>
+                            <input type="text" id="otherMNo" class="form-control" placeholder="Enter Member No">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="small fw-bold text-muted">Other Member Name</label>
+                            <input type="text" id="otherMName" class="form-control" placeholder="Enter Member Name">
+                        </div>
+                    </div>
+                </div>
                 
                 <div id="student-list"></div>
                 
@@ -378,6 +399,16 @@ function togglePassword(inputId, iconElement) {
     const input = document.getElementById(inputId);
     if (input.type === "password") { input.type = "text"; iconElement.classList.replace("bi-eye-slash", "bi-eye"); } 
     else { input.type = "password"; iconElement.classList.replace("bi-eye", "bi-eye-slash"); }
+}
+
+function toggleOtherMemberFields() {
+    const sel = document.getElementById('otherMemberSelect').value;
+    const fields = document.getElementById('otherMemberFields');
+    if(sel === 'Yes') {
+        fields.classList.remove('hidden');
+    } else {
+        fields.classList.add('hidden');
+    }
 }
 
 // --- LOAD STATISTICS & RECORDS TABLE ---
@@ -719,6 +750,63 @@ async function finalSubmit() {
         const sName = entry.querySelector('.s-name').value.toUpperCase();
         if(!file || !sName) return alert("Please fill Student Name and Upload Document for all students!");
     }
+
+    // --- NEW STRICT DUPLICATE PREVENTION LOGIC ---
+    setLoader(true, "Verifying Duplicates...", "Please wait...");
+    try {
+        const memMobileValue = document.getElementById('memMobile').value.trim();
+        const memNoValue = document.getElementById('dispMNo').value.trim();
+        
+        // Check for duplicates within the current form
+        let currentFormNames = [];
+        for(let entry of entries) {
+            const sName = entry.querySelector('.s-name').value.trim().toUpperCase();
+            const fName = entry.querySelector('.s-fname').value.trim().toUpperCase();
+            const surname = entry.querySelector('.s-surname').value.trim().toUpperCase();
+            const formFullName = `${sName} ${fName} ${surname}`.trim().toUpperCase();
+            if(currentFormNames.includes(formFullName) && formFullName !== "") {
+                alert(`This student is already entered in the current form: ${formFullName}\nPlease remove duplicate entries.`);
+                setLoader(false); return;
+            }
+            currentFormNames.push(formFullName);
+        }
+        
+        const allRegsSnap = await db.collection("registrations").get();
+        let allRegs = [];
+        allRegsSnap.forEach(d => allRegs.push(d.data()));
+
+        for(let reg of allRegs) {
+            // 3. Student Full Name Check (First priority for exact student match)
+            if(reg.Student) {
+                const regFullName = `${reg.Student.StudentName} ${reg.Student.FatherName} ${reg.Student.Surname}`.trim().toUpperCase();
+                for(let entry of entries) {
+                    const sName = entry.querySelector('.s-name').value.trim().toUpperCase();
+                    const fName = entry.querySelector('.s-fname').value.trim().toUpperCase();
+                    const surname = entry.querySelector('.s-surname').value.trim().toUpperCase();
+                    const formFullName = `${sName} ${fName} ${surname}`.trim().toUpperCase();
+                    if(regFullName === formFullName && formFullName !== "") {
+                        alert(`This student is already registered.\nYour Token Number: ${reg.Token}`);
+                        setLoader(false); return;
+                    }
+                }
+            }
+            
+            // 2. Member No Check
+            if(reg.MemberNo === memNoValue) {
+                alert(`Your registration has already been completed.\nYour Token Number: ${reg.Token}`);
+                setLoader(false); return;
+            }
+
+            // 1. Mobile Check
+            if(reg.Mobile === memMobileValue) {
+                alert(`This mobile number is already registered.\nYour Token Number: ${reg.Token}`);
+                setLoader(false); return;
+            }
+        }
+    } catch(e) {
+        console.error("Duplicate Check Error: ", e);
+    }
+    // --- END DUPLICATE PREVENTION LOGIC ---
     
     setLoader(true, "Generating Individual Tokens...", "Uploading Documents. Please wait...");
     try {
@@ -747,6 +835,16 @@ async function finalSubmit() {
 
         // --- SEQUENTIAL TOKEN GENERATION FOR EACH STUDENT ---
         const counterRef = db.collection("settings").doc("token_counter");
+        
+        const otherFamilyMember = document.getElementById('otherMemberSelect') ? document.getElementById('otherMemberSelect').value : "No";
+        let otherMemberData = null;
+        if (otherFamilyMember === "Yes") {
+            otherMemberData = {
+                MemberNo: document.getElementById('otherMNo').value.trim().toUpperCase(),
+                MemberName: document.getElementById('otherMName').value.trim().toUpperCase()
+            };
+        }
+
         await db.runTransaction(async (transaction) => {
             const doc = await transaction.get(counterRef);
             let nextNum = 1;
@@ -769,7 +867,9 @@ async function finalSubmit() {
                     Native: document.getElementById('dispNative').value,
                     Student: studentData[i], 
                     Status: "PENDING", 
-                    Date: new Date().toISOString()
+                    Date: new Date().toISOString(),
+                    OtherFamilyMember: otherFamilyMember,
+                    OtherMemberDetails: otherMemberData
                 });
                 nextNum++;
             }
