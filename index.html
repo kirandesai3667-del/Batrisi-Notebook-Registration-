@@ -765,11 +765,23 @@ async function finalSubmit() {
     const entries = document.querySelectorAll('.student-entry');
     if(entries.length === 0) return alert("Please select number of students!");
     
+    const memNameValue = document.getElementById('dispMName').value.trim().toUpperCase();
+    const memFirstName = memNameValue.split(" ")[0];
+
     const uploadPromises = [];
     for(let entry of entries) {
         const file = entry.querySelector('.s-file').files[0];
-        const sName = entry.querySelector('.s-name').value.toUpperCase();
-        if(!file || !sName) return alert("Please fill Student Name and Upload Document for all students!");
+        const sName = entry.querySelector('.s-name').value.trim().toUpperCase();
+        const fName = entry.querySelector('.s-fname').value.trim().toUpperCase();
+        
+        if(!file || !sName || !fName) return alert("Please fill Student Name, Father Name, and Upload Document for all students!");
+
+        // --- NEW: FATHER NAME STRICT VALIDATION ---
+        const fNameFirst = fName.split(" ")[0];
+        if (!memFirstName.includes(fNameFirst) && !fNameFirst.includes(memFirstName)) {
+            alert("Father name does not match member records. Please correct it.");
+            return; // BLOCK submission completely
+        }
     }
 
     // --- NEW STRICT DUPLICATE PREVENTION LOGIC ---
